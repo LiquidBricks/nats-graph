@@ -1,5 +1,7 @@
 # nats-graph
 
+A Gremlin-compatible graph database, backed by NATS KV as the storage engine.
+
 Composable graph traversal helpers built on top of NATS JetStream key-value buckets. The API mirrors a Gremlin-style fluent traversal so you can script graph mutations and queries against a NATS deployment.
 
 ## Installation
@@ -37,7 +39,7 @@ The package exposes:
 - `graph()` – create a fluent traversal context.
 - `V`, `E`, `addV`, `addE`, `drop` – low-level helpers for vertices and edges.
 - `connection` – lazy NATS connection primitives.
-- Property helpers from `property.js` and label helpers from `label.js`.
+- Property helpers from `property.js` and label helpers from `steps/label.js`.
 
 See the `test/` directory for more end-to-end examples.
 

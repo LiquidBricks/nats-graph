@@ -11,7 +11,8 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "test": "node ./test/run.js"
+    "test": "clear && node --env-file=test/.env test/run.js",
+    "compileErrors": "node -e \"import('./index.js').catch(err=>{console.error(err); process.exit(1)})\""
   },
   "dependencies": {
     "@nats-io/jetstream": "^3.0.2",
@@ -20,11 +21,13 @@
     "ulid": "^3.0.0"
   },
   "files": [
-    "*.js",
-    "*.mjs",
-    "benchmark/",
-    "dashboard/",
-    "test/"
+    "index.js",
+    "graph.js",
+    "config.js",
+    "steps/",
+    "optimizer/",
+    "kvProvider/",
+    "diagnosticsProvider/"
   ],
   "license": "UNLICENSED",
   "keywords": [
