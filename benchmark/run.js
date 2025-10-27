@@ -7,12 +7,12 @@
 import path from 'node:path'
 import url from 'node:url'
 import { Bench } from 'tinybench'
-import { connection } from '../natsConnection.js'
+import { createNatsContext } from '@liquid-bricks/shared-providers/nats-context'
 
 
 async function main() {
 
-  await connection.client("10.88.0.93")
+  const connection = createNatsContext({ servers: "10.88.0.93" })
   await connection.Kvm()
   // Import graph API
   const base = path.dirname(path.dirname(url.fileURLToPath(import.meta.url)))

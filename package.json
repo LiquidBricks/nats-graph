@@ -5,26 +5,30 @@
   "type": "module",
   "main": "./index.js",
   "exports": {
-    ".": "./index.js"
+    "./graph": "./graph.js"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "test": "node ./test/run.js"
+    "test": "clear && node --env-file=test/.env test/run.js",
+    "compileErrors": "node -e \"import('./index.js').catch(err=>{console.error(err); process.exit(1)})\""
   },
   "dependencies": {
+    "@liquid-bricks/shared-providers": "github:LiquidBricks/shared-providers#2a6940490b514c08dbd33b1947b87b2466bba343",
     "@nats-io/jetstream": "^3.0.2",
     "@nats-io/kv": "^3.0.2",
     "@nats-io/transport-node": "^3.0.2",
     "ulid": "^3.0.0"
   },
   "files": [
-    "*.js",
-    "*.mjs",
-    "benchmark/",
-    "dashboard/",
-    "test/"
+    "index.js",
+    "graph.js",
+    "config.js",
+    "steps/",
+    "optimizer/",
+    "kvProvider/",
+    "diagnosticsProvider/"
   ],
   "license": "UNLICENSED",
   "keywords": [

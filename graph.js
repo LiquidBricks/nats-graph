@@ -1,65 +1,108 @@
-import { V } from './V.js'
-import { addV } from './addV.js'
-import { E } from './E.js'
-import { addE } from './addE.js'
-import { drop } from './drop.js'
-import { assert } from './config.js'
+import { optimizeOpsChain } from './optimizer/index.js'
+import { operationFactoryKey, operationResultType, operationStreamWrapperKey, Errors } from './steps/types.js'
+import { kvProviderFactory } from './kvProvider/factory.js'
+import { diagnostics } from './diagnosticsProvider/index.js'
 
-const graphEntryPointsIter = () => (async function* () {
-  yield { V, addV, E, addE, drop }
-})()
 
-// Make any object with async methods fluent with a single await at the end
-export const graph = () => {
-  const opsChain = [];
-
-  const handler = {
-    get(_, prop) {
-      if (prop === 'explain') {
-        return () => opsChain.map(({ prop, args }) => `${prop}(${args.map(a => JSON.stringify(a)).join(', ')})`).join(' -> ');
-      }
-      if (prop === 'then') {
-        return (onFulfilled) => onFulfilled(Array.fromAsync((async function* () {
-          assert(opsChain.length > 0, 'No Operations available.')
-
-          yield* abc({
-            itemIter: graphEntryPointsIter(),
-            opsChain
-          })
-        })()))
-      }
-      if (['finally', 'catch'].includes(prop)) {
-        assert(false, `${prop} implementation not available.`)
-      }
-      return (...args) => {
-        opsChain.push({ prop, args });
-        return proxy;
-      };
+export const Graph = (config) => {
+  config ||= {}
+  const { kv, kvConfig } = config
+  // Create a single diagnostics instance and pass it through everywhere
+  const diags = diagnostics()
+  let kvStore = kvProviderFactory(kv)
+  const getKVStore = async () => {
+    if (typeof kvStore === 'function') {
+      kvStore = kvStore({
+        config: kvConfig,
+        ctx: { diagnostics: diags }
+      })
     }
-  };
-
-  const proxy = new Proxy({}, handler);
-  return proxy;
-};
-
-async function* abc({
-  itemIter, opsChain, opsChainIndex = 0
-}) {
-  if (opsChainIndex === opsChain.length) {
-    yield* itemIter
-    return
+    return kvStore
   }
-  const nextOpsChainIndex = opsChainIndex + 1
-  const { prop, args } = opsChain[opsChainIndex]
+  const getDiagnostics = async () => {
+    return diagnostics()
+  }
 
-  for await (const item of itemIter) {
-    const items = await item[prop](...args)
-    if (items[Symbol.asyncIterator]) {
-      for await (const i of abc({ itemIter: items, opsChain, opsChainIndex: nextOpsChainIndex })) {
-        yield i
+
+  return graph({ getKVStore, getDiagnostics });
+}
+
+const graph = ({ getKVStore, getDiagnostics }) => ({
+  get g() {
+    return (function createProxy(operationsChain = []) {
+      const handler = {
+        get(_, prop) {
+          if (prop === 'explain') {
+            return () => operationsChain
+              .map(({ prop, args }) => `${prop}(${args.map(a => JSON.stringify(a)).join(', ')})`)
+              .join(' -> ');
+          }
+          if (prop === 'then') {
+            return (onFulfilled) => onFulfilled(Array.fromAsync((async function* () {
+              const { interface: kvStore } = await getKVStore()
+              const diagnostics = await getDiagnostics()
+              diagnostics.require(!!kvStore, Errors.KVSTORE_MISSING, 'kvStore does not have an interface.', { where: 'graph.then' })
+              yield* operationChainExecutor({
+                opsChain: optimizeOpsChain(operationsChain, { diagnostics }),
+                kvStore,
+                diagnostics,
+              })
+            })()))
+          }
+          return (...args) => createProxy([...operationsChain, { prop, args }])
+        }
       }
-    } else {
-      yield items
-    }
+      return new Proxy({}, handler)
+    })()
+  },
+  async close() {
+    const kvStore = await getKVStore()
+    await kvStore.close()
   }
+})
+
+async function* operationChainExecutor({ opsChain, kvStore, diagnostics }) {
+  let pipeline = seedPipeline()
+
+  for (const step of opsChain) {
+    pipeline = attachStep({ pipeline, step, kvStore, diagnostics })
+  }
+
+  for await (const result of pipeline) {
+    yield result
+  }
+}
+
+function seedPipeline() {
+  return (async function* () {
+    yield null
+  })()
+}
+
+function attachStep({ pipeline, step, kvStore, diagnostics }) {
+  const { args, operation } = step
+
+  const streamWrap = operation[operationStreamWrapperKey]
+  if (typeof streamWrap === 'function') {
+    return streamWrap({ ctx: { kvStore, diagnostics }, args })(pipeline)
+  }
+
+  const stepFactory = operation[operationFactoryKey]
+
+  return (async function* () {
+    for await (const parent of pipeline) {
+      const itemIter = stepFactory({
+        parent,
+        ctx: {
+          kvStore,
+          diagnostics,
+        },
+        args
+      })
+
+      for await (const item of itemIter) {
+        yield item
+      }
+    }
+  })()
 }
