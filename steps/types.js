@@ -31,6 +31,9 @@ export const operationName = {
   'out': Symbol('operationName_out'),
   'outE': Symbol('operationName_outE'),
   'count': Symbol('operationName_count'),
+  'filter': Symbol('operationName_filter'),
+  'path': Symbol('operationName_path'),
+  'tail': Symbol('operationName_tail'),
 }
 
 
@@ -64,6 +67,12 @@ export const Errors = {
 
   // not()
   NOT_INVALID_PREDICATE: 'NOT_INVALID_PREDICATE',
+
+  // filter()
+  FILTER_INVALID_PREDICATE: 'FILTER_INVALID_PREDICATE',
+
+  // tail()
+  TAIL_INVALID: 'TAIL_INVALID',
 
   // property()
   PROPERTY_INVALID_KEY: 'PROPERTY_INVALID_KEY',

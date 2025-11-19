@@ -14,6 +14,7 @@ import { runIdSuite } from './id.shared.mjs'
 import { runAndSuite } from './and.shared.mjs'
 import { runOrSuite } from './or.shared.mjs'
 import { runNotSuite } from './not.shared.mjs'
+import { runFilterSuite } from './filter.shared.mjs'
 import { runInSuite } from './in.shared.mjs'
 import { runInESuite } from './inE.shared.mjs'
 import { runInVSuite } from './inV.shared.mjs'
@@ -26,6 +27,8 @@ import { runPropertiesSuite } from './properties.shared.mjs'
 import { runPropertySuite } from './property.shared.mjs'
 import { runValueMapSuite } from './valueMap.shared.mjs'
 import { runVHasLabelSuite } from './_vHasLabel.shared.mjs'
+import { runPathSuite } from './path.shared.mjs'
+import { runTailSuite } from './tail.shared.mjs'
 
 const setup = makeSetup('memory')
 const diagnostics = () => createDiagnostics()
@@ -44,6 +47,7 @@ runIdSuite({ label: 'memory', setup })
 runAndSuite({ label: 'memory', setup })
 runOrSuite({ label: 'memory', setup })
 runNotSuite({ label: 'memory', setup })
+runFilterSuite({ label: 'memory', setup })
 runInSuite({ label: 'memory', setup })
 runInESuite({ label: 'memory', setup })
 runInVSuite({ label: 'memory', setup })
@@ -56,3 +60,5 @@ runOutVSuite({ label: 'memory', setup })
 runPropertySuite({ label: 'memory', setup })
 runValueMapSuite({ label: 'memory', setup })
 runVHasLabelSuite({ label: 'memory', kvProviderFactory, diagnosticsFactory: diagnostics })
+runPathSuite({ label: 'memory', setup })
+runTailSuite({ label: 'memory', setup })

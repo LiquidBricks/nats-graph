@@ -7,7 +7,9 @@ import { dropEdge, dropGraph, dropVertex } from "./terminal/drop.js";
 import { operationName, operationResultType } from './types.js'
 import { edgeHas, vertexHas } from './filter/has.js'
 import { edgeAnd, valueAnd, vertexAnd } from './filter/and.js'
+import { edgeFilter, valueFilter, vertexFilter } from './filter/filter.js'
 import { edgeLimit, valueLimit, vertexLimit } from './filter/limit.js'
+import { edgeTail, valueTail, vertexTail } from './filter/tail.js'
 import { edgeNot, valueNot, vertexNot } from './filter/not.js'
 import { edgeOr, valueOr, vertexOr } from './filter/or.js'
 import { edgePropertyStep, vertexPropertyStep } from './mutation/property.js'
@@ -25,6 +27,7 @@ import { edgeInV } from './EtoV/inV.js'
 import { edgeOtherV } from './shelved/edgeOtherV.js'
 import { edgeOutV } from './EtoV/outV.js'
 import { count } from './terminal/count.js'
+import { path } from './terminal/path.js'
 
 
 
@@ -37,6 +40,7 @@ export const operationsMap = new Map([
   [operationName._vHasLabel, _vHasLabel],
   [operationName.property, vertexPropertyStep],
   [operationName.has, vertexHas],
+  [operationName.filter, vertexFilter],
   [operationName.and, vertexAnd],
   [operationName.or, vertexOr],
   [operationName.not, vertexNot],
@@ -51,6 +55,8 @@ export const operationsMap = new Map([
   [operationName.properties, vertexProperties],
   [operationName.valueMap, vertexValueMap],
   [operationName.limit, vertexLimit],
+  [operationName.tail, vertexTail],
+  [operationName.path, path],
   [operationName.property, edgePropertyStep],
   [operationName.outV, edgeOutV],
   [operationName.inV, edgeInV],
@@ -60,12 +66,18 @@ export const operationsMap = new Map([
   [operationName.label, edgeLabel],
   [operationName.properties, edgeProperties],
   [operationName.valueMap, edgeValueMap],
+  [operationName.filter, edgeFilter],
   [operationName.and, edgeAnd],
   [operationName.or, edgeOr],
   [operationName.not, edgeNot],
+  [operationName.tail, edgeTail],
+  [operationName.path, path],
   [operationName.and, valueAnd],
   [operationName.or, valueOr],
   [operationName.not, valueNot],
+  [operationName.filter, valueFilter],
+  [operationName.tail, valueTail],
+  [operationName.path, path],
 ])
 
 
@@ -85,6 +97,7 @@ export const nextAvailableOperationsMap = new Map([
     new Map([
       ['property', vertexPropertyStep],
       ['has', vertexHas],
+      ['filter', vertexFilter],
       ['and', vertexAnd],
       ['or', vertexOr],
       ['not', vertexNot],
@@ -99,6 +112,8 @@ export const nextAvailableOperationsMap = new Map([
       ['properties', vertexProperties],
       ['valueMap', vertexValueMap],
       ['limit', vertexLimit],
+      ['tail', vertexTail],
+      ['path', path],
       ['count', count],
     ]),
   ], [
@@ -106,6 +121,7 @@ export const nextAvailableOperationsMap = new Map([
     new Map([
       ['property', edgePropertyStep],
       ['has', edgeHas],
+      ['filter', edgeFilter],
       ['and', edgeAnd],
       ['or', edgeOr],
       ['not', edgeNot],
@@ -119,16 +135,21 @@ export const nextAvailableOperationsMap = new Map([
       ['bothV', edgeBothV],
       ['otherV', edgeOtherV],
       ['limit', edgeLimit],
+      ['tail', edgeTail],
+      ['path', path],
       ['count', count],
     ]),
   ], [
     operationResultType.value,
     new Map([
       ['limit', valueLimit],
+      ['tail', valueTail],
       ['count', count],
+      ['filter', valueFilter],
       ['and', valueAnd],
       ['or', valueOr],
       ['not', valueNot],
+      ['path', path],
     ])
   ]
 ])

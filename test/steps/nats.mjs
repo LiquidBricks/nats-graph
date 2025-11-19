@@ -17,6 +17,7 @@ import { runIdSuite } from './id.shared.mjs'
 import { runAndSuite } from './and.shared.mjs'
 import { runOrSuite } from './or.shared.mjs'
 import { runNotSuite } from './not.shared.mjs'
+import { runFilterSuite } from './filter.shared.mjs'
 import { runInSuite } from './in.shared.mjs'
 import { runInESuite } from './inE.shared.mjs'
 import { runInVSuite } from './inV.shared.mjs'
@@ -29,6 +30,8 @@ import { runPropertiesSuite } from './properties.shared.mjs'
 import { runPropertySuite } from './property.shared.mjs'
 import { runValueMapSuite } from './valueMap.shared.mjs'
 import { runVHasLabelSuite } from './_vHasLabel.shared.mjs'
+import { runPathSuite } from './path.shared.mjs'
+import { runTailSuite } from './tail.shared.mjs'
 
 assert.ok(NATS_IP_ADDRESS, 'NATS_IP_ADDRESS missing; set in test/.env')
 
@@ -52,6 +55,7 @@ runIdSuite({ label: 'nats', setup })
 runAndSuite({ label: 'nats', setup })
 runOrSuite({ label: 'nats', setup })
 runNotSuite({ label: 'nats', setup })
+runFilterSuite({ label: 'nats', setup })
 runInSuite({ label: 'nats', setup })
 runInESuite({ label: 'nats', setup })
 runInVSuite({ label: 'nats', setup })
@@ -64,3 +68,5 @@ runOutVSuite({ label: 'nats', setup })
 runPropertySuite({ label: 'nats', setup })
 runValueMapSuite({ label: 'nats', setup })
 runVHasLabelSuite({ label: 'nats', kvProviderFactory, diagnosticsFactory: diagnostics })
+runPathSuite({ label: 'nats', setup })
+runTailSuite({ label: 'nats', setup })
