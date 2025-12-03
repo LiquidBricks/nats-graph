@@ -5,26 +5,30 @@
   "type": "module",
   "main": "./index.js",
   "exports": {
-    ".": "./index.js"
+    "./graph": "./graph/graph.js"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "test": "node ./test/run.js"
+    "test": "clear && node --env-file=test/.env test/run.js",
+    "compileErrors": "node -e \"import('./graph/graph.js').catch(err=>{console.error(err); process.exit(1)})\"",
+    "build": "node scripts/embed-build-meta.js",
+    "prepublishOnly": "node scripts/embed-build-meta.js"
   },
   "dependencies": {
+    "@liquid-bricks/shared-providers": "github:LiquidBricks/shared-providers#54f7f4140de3d782a000b7f154a459a95d102964",
     "@nats-io/jetstream": "^3.0.2",
     "@nats-io/kv": "^3.0.2",
     "@nats-io/transport-node": "^3.0.2",
     "ulid": "^3.0.0"
   },
   "files": [
-    "*.js",
-    "*.mjs",
-    "benchmark/",
-    "dashboard/",
-    "test/"
+    "graph/",
+    "config.js",
+    "steps/",
+    "kvProvider/",
+    "build-meta.js"
   ],
   "license": "UNLICENSED",
   "keywords": [
