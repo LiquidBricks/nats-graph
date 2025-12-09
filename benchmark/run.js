@@ -7,12 +7,12 @@
 import path from 'node:path'
 import url from 'node:url'
 import { Bench } from 'tinybench'
-import { connection } from '../natsConnection.js'
+import { createNatsContext } from '@liquid-bricks/shared-providers/nats-context'
 
 
 async function main() {
 
-  await connection.client("10.88.0.93")
+  const connection = createNatsContext({ servers: "10.88.0.93" })
   await connection.Kvm()
   // Import graph API
   const base = path.dirname(path.dirname(url.fileURLToPath(import.meta.url)))
@@ -20,7 +20,7 @@ async function main() {
   const { addE } = await import(url.pathToFileURL(path.join(base, 'addE.js')))
   const { V } = await import(url.pathToFileURL(path.join(base, 'V.js')))
   const { E } = await import(url.pathToFileURL(path.join(base, 'E.js')))
-  const { graph } = await import(url.pathToFileURL(path.join(base, 'graph.js')))
+  const { graph } = await import(url.pathToFileURL(path.join(base, 'graph/graph.js')))
 
   // Warm up: ensure module init costs don't skew short benches
   await graph().drop()

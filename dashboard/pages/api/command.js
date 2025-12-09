@@ -1,5 +1,5 @@
-import { graph as natsGraph } from '../../../graph.js'
-import { connection } from '../../../natsConnection.js';
+import { graph as natsGraph } from '../../../graph/graph.js'
+import { createNatsContext } from '@liquid-bricks/shared-providers/nats-context';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,7 +8,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connection.client("10.88.0.93")
+    const natsContext = createNatsContext({ servers: "10.88.0.93" })
+    await natsContext.client()
     const { code } = req.body || {};
 
     const ts = new Date().toISOString();

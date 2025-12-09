@@ -1,31 +1,46 @@
 #!/usr/bin/env node
-import assert from 'node:assert'
+import { run } from 'node:test'
+import { spec } from 'node:test/reporters'
+import path from 'path'
+import fs from 'node:fs'
 
-async function main() {
-  const tests = [
-    './test_graph_basic.mjs',
-    './test_iterators.mjs',
-    './test_edges.mjs',
-    './test_fluent_explain_then.mjs',
-    './test_vertex_traversals.mjs',
-    './test_edge_traversals.mjs',
-    './test_filters_and_endpoints.mjs',
-    './test_api_inputs_and_drop.mjs',
-    './test_V_isolated.mjs',
-    './test_E_isolated.mjs',
-  ];
-  let passed = 0;
-  for (const t of tests) {
-    try {
-      await import(new URL(t, import.meta.url));
-      console.log('ok', t);
-      passed++;
-    } catch (e) {
-      console.error('FAIL', t, e);
-      process.exitCode = 1;
-    }
-  }
-  console.log(`\n${passed}/${tests.length} test files passed`)
-}
+const outputDir = path.resolve(import.meta.dirname, 'output')
+fs.mkdirSync(outputDir, { recursive: true })
+const now = Date.now()
+// Reverse-lexicographically sortable prefix: smaller for newer timestamps
+// Use MAX_SAFE_INTEGER to keep arithmetic precise and width fixed
+const MAX_SAFE = Number.MAX_SAFE_INTEGER
+const reverseKey = (BigInt(MAX_SAFE) - BigInt(now)).toString().padStart(String(MAX_SAFE).length, '0')
 
-main();
+// Clear, human-readable timestamp alongside the reverse key
+const timestamp = new Date(now).toISOString().replace(/[:.]/g, '-')
+
+// Example: 0000...123__results-2025-10-03T12-34-56-789Z.txt
+const outputFile = path.resolve(outputDir, `${reverseKey}__results-${timestamp}.txt`)
+const fileStream = fs.createWriteStream(outputFile)
+
+const stream = run({
+  concurrency: true,
+  globPatterns: [
+    path.resolve(import.meta.dirname, 'graph.mjs'),
+    path.resolve(import.meta.dirname, 'kvStoreProvider', '**/*.mjs'),
+    path.resolve(import.meta.dirname, 'metaTests', '**/*.mjs'),
+    path.resolve(import.meta.dirname, 'steps', '**/*.mjs'),
+    "!" + path.resolve(import.meta.dirname, '**/*.shared.mjs'),
+  ]
+})
+  .on('test:fail', () => {
+    process.exitCode = 1;
+  })
+  .compose(spec)
+
+stream.pipe(process.stdout)
+stream.pipe(fileStream)
+
+// Ensure the process exits after tests complete and the file is flushed
+stream.once('end', () => {
+  if (!fileStream.closed) fileStream.end()
+})
+fileStream.once('finish', () => {
+  process.exit(process.exitCode ?? 0)
+})
