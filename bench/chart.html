@@ -1,12 +1,15 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Benchmark Marks Over Time</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --bg: #0f172a;
@@ -18,7 +21,11 @@
       --accent-2: #7fb0ff;
       --border: rgba(255, 255, 255, 0.1);
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -27,6 +34,7 @@
       background: radial-gradient(120% 120% at 20% 20%, #1e2a47 0%, #0c1528 45%, #050915 100%);
       padding: 32px 18px 48px;
     }
+
     .page {
       max-width: 1100px;
       margin: 0 auto;
@@ -34,8 +42,9 @@
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 24px 22px 32px;
-      box-shadow: 0 40px 120px rgba(0,0,0,0.45);
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.45);
     }
+
     header {
       display: flex;
       gap: 14px;
@@ -43,17 +52,20 @@
       align-items: flex-start;
       margin-bottom: 12px;
     }
+
     h1 {
       margin: 0;
       font-size: 28px;
       letter-spacing: -0.01em;
     }
+
     header p {
       margin: 4px 0 0;
       color: var(--muted);
       line-height: 1.45;
       max-width: 720px;
     }
+
     .badge {
       padding: 6px 10px;
       border-radius: 12px;
@@ -62,17 +74,20 @@
       color: var(--muted);
       font-size: 13px;
     }
+
     .controls {
       margin: 18px 0 20px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
     }
+
     .control-group {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
     }
+
     .control {
       background: var(--panel);
       border: 1px solid var(--border);
@@ -82,19 +97,24 @@
       flex-direction: column;
       gap: 6px;
     }
+
     .control-group .control {
       flex: 1;
       min-width: 120px;
     }
+
     .control.compact {
       padding: 8px 10px;
     }
+
     .control label {
       font-size: 13px;
       color: var(--muted);
       letter-spacing: 0.01em;
     }
-    select, input {
+
+    select,
+    input {
       width: 100%;
       padding: 10px;
       border-radius: 10px;
@@ -104,14 +124,17 @@
       font-family: inherit;
       font-size: 14px;
     }
+
     input[type="number"] {
       -moz-appearance: textfield;
     }
+
     input::-webkit-outer-spin-button,
     input::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
+
     .status {
       font-size: 13px;
       color: var(--muted);
@@ -122,14 +145,23 @@
       flex-wrap: wrap;
       margin-bottom: 14px;
     }
-    .status strong { color: var(--text); }
+
+    .status strong {
+      color: var(--text);
+    }
+
     .chart-wrap {
       background: linear-gradient(145deg, #0f172a, #0b1221);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 16px;
     }
-    canvas { width: 100%; height: 480px; }
+
+    canvas {
+      width: 100%;
+      height: 480px;
+    }
+
     .table {
       margin-top: 18px;
       border: 1px solid var(--border);
@@ -137,40 +169,60 @@
       overflow: hidden;
       background: var(--panel);
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
     }
-    th, td {
+
+    th,
+    td {
       padding: 10px 12px;
       border-bottom: 1px solid var(--border);
     }
+
     th {
       text-align: left;
       color: var(--muted);
-      background: rgba(255,255,255,0.02);
+      background: rgba(255, 255, 255, 0.02);
       font-weight: 500;
     }
-    tr:last-child td { border-bottom: none; }
-    .muted { color: var(--muted); }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
     .empty {
       text-align: center;
       padding: 18px 12px;
       color: var(--muted);
     }
+
     @media (max-width: 640px) {
-      header { flex-direction: column; }
-      canvas { height: 360px; }
+      header {
+        flex-direction: column;
+      }
+
+      canvas {
+        height: 360px;
+      }
     }
   </style>
 </head>
+
 <body>
   <main class="page">
     <header>
       <div>
         <h1>Benchmark Marks Over Time</h1>
-        <p>Plots every benchmark mark produced by <code>run.js</code>. Data is loaded from <code>benchmark/marks</code> (and <code>marks/index.json</code>) so you can see how each task changes across runs.</p>
+        <p>Plots every benchmark mark produced by <code>run.js</code>. Data is loaded from <code>bench/marks</code> (and
+          <code>marks/index.json</code>) so you can see how each task changes across runs.
+        </p>
       </div>
       <span class="badge">trend view</span>
     </header>
@@ -564,7 +616,7 @@
       try {
         state.entries = await loadIndex()
         if (!state.entries.length) {
-          statusEl.textContent = 'No benchmark data found in benchmark/marks.'
+          statusEl.textContent = 'No benchmark data found in bench/marks.'
           return
         }
         renderFilters(state.entries)
@@ -579,4 +631,5 @@
     init()
   </script>
 </body>
+
 </html>

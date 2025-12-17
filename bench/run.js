@@ -2,7 +2,7 @@
 // Basic micro-benchmarks for the graph API using tinybench.
 // Usage:
 //   npm i -D tinybench
-//   node benchmark/run.js
+//   node bench/run.js
 //
 // Runs the suite against both kv providers (NATS + in-memory).
 
