@@ -8,6 +8,7 @@ import {
   Errors
 } from '../types.js'
 import { graphKeyspace } from '../kv/graphKeyspace.js'
+import { readChunkedSet } from '../kv/kvUtils.js'
 
 const normalizeLabels = (args) => {
   if (!Array.isArray(args)) return []
@@ -31,18 +32,44 @@ export const inStep = {
         try {
           if (wanted.size > 0) {
             for (const label of wanted) {
-              const keys = await store.keys(graphKeyspace.vertex.inV.patternByLabel(vertexId, label))
-              for await (const key of keys) {
-                const fromId = key.split('.').pop()
+              const neighbors = await readChunkedSet(store, {
+                metaKey: graphKeyspace.adj.inV.labelMeta(vertexId, label),
+                chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.labelChunk(vertexId, label, idx),
+              })
+              const sources = neighbors.length > 0
+                ? neighbors
+                : await (async () => {
+                  const keys = await store.keys(graphKeyspace.vertex.inV.patternByLabel(vertexId, label))
+                  const acc = []
+                  for await (const key of keys) {
+                    const fromId = key.split('.').pop()
+                    if (fromId && fromId !== '__index') acc.push(fromId)
+                  }
+                  return acc
+                })()
+              for (const fromId of sources) {
                 if (!fromId || fromId === '__index' || seen.has(fromId)) continue
                 seen.add(fromId)
                 yield fromId
               }
             }
           } else {
-            const keys = await store.keys(graphKeyspace.vertex.inV.pattern(vertexId))
-            for await (const key of keys) {
-              const fromId = key.split('.').pop()
+            const neighbors = await readChunkedSet(store, {
+              metaKey: graphKeyspace.adj.inV.meta(vertexId),
+              chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.chunk(vertexId, idx),
+            })
+            const sources = neighbors.length > 0
+              ? neighbors
+              : await (async () => {
+                const keys = await store.keys(graphKeyspace.vertex.inV.pattern(vertexId))
+                const acc = []
+                for await (const key of keys) {
+                  const fromId = key.split('.').pop()
+                  if (fromId && fromId !== '__index') acc.push(fromId)
+                }
+                return acc
+              })()
+            for (const fromId of sources) {
               if (!fromId || fromId === '__index' || seen.has(fromId)) continue
               seen.add(fromId)
               yield fromId
@@ -69,18 +96,44 @@ export const inStep = {
       try {
         if (wanted.size > 0) {
           for (const label of wanted) {
-            const keys = await store.keys(graphKeyspace.vertex.inV.patternByLabel(vertexId, label))
-            for await (const key of keys) {
-              const fromId = key.split('.').pop()
+            const neighbors = await readChunkedSet(store, {
+              metaKey: graphKeyspace.adj.inV.labelMeta(vertexId, label),
+              chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.labelChunk(vertexId, label, idx),
+            })
+            const sources = neighbors.length > 0
+              ? neighbors
+              : await (async () => {
+                const keys = await store.keys(graphKeyspace.vertex.inV.patternByLabel(vertexId, label))
+                const acc = []
+                for await (const key of keys) {
+                  const fromId = key.split('.').pop()
+                  if (fromId && fromId !== '__index') acc.push(fromId)
+                }
+                return acc
+              })()
+            for (const fromId of sources) {
               if (!fromId || fromId === '__index' || seen.has(fromId)) continue
               seen.add(fromId)
               yield fromId
             }
           }
         } else {
-          const keys = await store.keys(graphKeyspace.vertex.inV.pattern(vertexId))
-          for await (const key of keys) {
-            const fromId = key.split('.').pop()
+          const neighbors = await readChunkedSet(store, {
+            metaKey: graphKeyspace.adj.inV.meta(vertexId),
+            chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.chunk(vertexId, idx),
+          })
+          const sources = neighbors.length > 0
+            ? neighbors
+            : await (async () => {
+              const keys = await store.keys(graphKeyspace.vertex.inV.pattern(vertexId))
+              const acc = []
+              for await (const key of keys) {
+                const fromId = key.split('.').pop()
+                if (fromId && fromId !== '__index') acc.push(fromId)
+              }
+              return acc
+            })()
+          for (const fromId of sources) {
             if (!fromId || fromId === '__index' || seen.has(fromId)) continue
             seen.add(fromId)
             yield fromId

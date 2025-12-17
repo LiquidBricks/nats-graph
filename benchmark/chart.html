@@ -189,10 +189,21 @@
           <label for="metric">Metric</label>
           <select id="metric">
             <option value="ops/s">ops/s (higher is better)</option>
+            <option value="ops/s Δv">ops/s Δv (pct change vs previous run)</option>
             <option value="avg (ms)">avg (ms)</option>
             <option value="p99">p99 (ms)</option>
             <option value="samples">samples</option>
           </select>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control">
+          <label for="startDate">Start date</label>
+          <input id="startDate" type="datetime-local" />
+        </div>
+        <div class="control">
+          <label for="endDate">End date</label>
+          <input id="endDate" type="datetime-local" />
         </div>
       </div>
       <div class="control">
@@ -244,6 +255,8 @@
     const metricMinInput = document.getElementById('metricMin')
     const metricMaxInput = document.getElementById('metricMax')
     const sortSelect = document.getElementById('sortDirection')
+    const startDateInput = document.getElementById('startDate')
+    const endDateInput = document.getElementById('endDate')
     const tableWrap = document.getElementById('latest-table')
     const ctx = document.getElementById('marksChart').getContext('2d')
 
@@ -263,6 +276,7 @@
 
     const metricLabels = {
       'ops/s': 'ops/s',
+      'ops/s Δv': 'ops/s Δv',
       'avg (ms)': 'average (ms)',
       'p99': 'p99 (ms)',
       'samples': 'samples',
@@ -288,6 +302,19 @@
       if (Number.isNaN(d.getTime())) return iso || 'n/a'
       const pad = (n) => String(n).padStart(2, '0')
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+    }
+
+    function parseDateFromInput(value) {
+      if (!value) return null
+      const parsed = new Date(value)
+      return Number.isNaN(parsed.getTime()) ? null : parsed
+    }
+
+    function getEntryTime(entry) {
+      const raw = entry.timestamp || entry.runId
+      if (!raw) return null
+      const parsed = new Date(raw)
+      return Number.isNaN(parsed.getTime()) ? null : parsed.getTime()
     }
 
     function lastValue(arr) {
@@ -317,8 +344,21 @@
       sortSelect.value = defaults.direction
     }
 
-    function buildSeries({ entries, suite, provider, metric, taskFilter, cap, minValue, maxValue, direction }) {
-      const filtered = entries.filter(e => (!suite || e.suite === suite) && (!provider || e.provider === provider))
+    function buildSeries({ entries, suite, provider, metric, taskFilter, cap, minValue, maxValue, direction, startDate, endDate }) {
+      const startMs = startDate ? startDate.getTime() : null
+      const endMs = endDate ? endDate.getTime() : null
+
+      const filtered = entries.filter(entry => {
+        if (suite && entry.suite !== suite) return false
+        if (provider && entry.provider !== provider) return false
+        if (startMs !== null || endMs !== null) {
+          const entryTime = getEntryTime(entry)
+          if (entryTime == null) return false
+          if (startMs !== null && entryTime < startMs) return false
+          if (endMs !== null && entryTime > endMs) return false
+        }
+        return true
+      })
       if (!filtered.length) {
         return { labels: [], datasets: [], series: {}, filtered }
       }
@@ -329,18 +369,37 @@
       const series = {}
       const useMin = Number.isFinite(minValue) && minValue !== Number.NEGATIVE_INFINITY
       const useMax = Number.isFinite(maxValue) && maxValue !== Number.POSITIVE_INFINITY
+      const isDeltaMetric = metric === 'ops/s Δv'
+      const sourceMetric = isDeltaMetric ? 'ops/s' : metric
+      const previousOps = isDeltaMetric ? new Map() : null
+
       filtered.forEach((entry, idx) => {
         (entry.rows || []).forEach(row => {
           const task = row.task || 'unknown'
-          const raw = row[metric]
-          const value = Number(raw)
-          if (!Number.isFinite(value)) return
-          if (useMin && value < minValue) return
-          if (useMax && value > maxValue) return
           if (!series[task]) {
             series[task] = new Array(filtered.length).fill(null)
           }
-          series[task][idx] = value
+          const raw = row[sourceMetric]
+          const value = Number(raw)
+          if (!Number.isFinite(value)) return
+
+          let computed = value
+          if (isDeltaMetric) {
+            const prevValue = previousOps.get(task)
+            previousOps.set(task, value)
+            if (prevValue == null) {
+              computed = 0
+            } else if (!Number.isFinite(prevValue) || prevValue === 0) {
+              computed = null
+            } else {
+              computed = Math.round(((value / prevValue) - 1) * 100)
+            }
+          }
+          if (computed == null) return
+          if (!Number.isFinite(computed)) return
+          if (useMin && computed < minValue) return
+          if (useMax && computed > maxValue) return
+          series[task][idx] = computed
         })
       })
 
@@ -418,6 +477,8 @@
 
       const minValue = parseLimitInput(metricMinInput, Number.NEGATIVE_INFINITY)
       const maxValue = parseLimitInput(metricMaxInput, Number.POSITIVE_INFINITY)
+      const startDate = parseDateFromInput(startDateInput.value)
+      const endDate = parseDateFromInput(endDateInput.value)
 
       const { labels, datasets, series, filtered } = buildSeries({
         entries: state.entries,
@@ -429,6 +490,8 @@
         minValue,
         maxValue,
         direction,
+        startDate,
+        endDate,
       })
 
       if (!labels.length || !datasets.length) {
@@ -491,7 +554,7 @@
     }
 
     function attachListeners() {
-      [suiteSelect, providerSelect, metricSelect, taskFilterInput, seriesCapInput, metricMinInput, metricMaxInput, sortSelect].forEach(el => {
+      [suiteSelect, providerSelect, metricSelect, taskFilterInput, seriesCapInput, metricMinInput, metricMaxInput, sortSelect, startDateInput, endDateInput].forEach(el => {
         el.addEventListener('input', () => updateChart())
         el.addEventListener('change', () => updateChart())
       })

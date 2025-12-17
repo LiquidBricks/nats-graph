@@ -1,7 +1,7 @@
 import { uniqueID } from '../../config.js'
 import { operationResultTypeKey, operationFactoryKey, operationResultType, operationNameKey, operationName, operationStreamWrapperKey, Errors } from '../types.js'
 import { graphKeyspace } from '../kv/graphKeyspace.js'
-import { keyExists, pushUniqueToJsonArray } from '../kv/kvUtils.js'
+import { keyExists, pushUniqueToJsonArray, appendToChunkedSet } from '../kv/kvUtils.js'
 
 export const addE = {
   [operationNameKey]: operationName.addE,
@@ -45,6 +45,26 @@ export const addE = {
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.outV.indexByLabel(incoming, label), outgoing),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.inV.index(outgoing), incoming),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.inV.indexByLabel(outgoing, label), incoming),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outV.meta(incoming),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outV.chunk(incoming, idx),
+          value: outgoing,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outV.labelMeta(incoming, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outV.labelChunk(incoming, label, idx),
+          value: outgoing,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inV.meta(outgoing),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.chunk(outgoing, idx),
+          value: incoming,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inV.labelMeta(outgoing, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.labelChunk(outgoing, label, idx),
+          value: incoming,
+        }),
       ]);
 
       try { await kvStore.create(graphKeyspace.edgesIndex.record(id), "") } catch { }
@@ -98,6 +118,26 @@ export const addE = {
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.outV.indexByLabel(incoming, label), outgoing),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.inV.index(outgoing), incoming),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.inV.indexByLabel(outgoing, label), incoming),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outV.meta(incoming),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outV.chunk(incoming, idx),
+          value: outgoing,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outV.labelMeta(incoming, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outV.labelChunk(incoming, label, idx),
+          value: outgoing,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inV.meta(outgoing),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.chunk(outgoing, idx),
+          value: incoming,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inV.labelMeta(outgoing, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.labelChunk(outgoing, label, idx),
+          value: incoming,
+        }),
       ]);
 
       // Global edge index for fast E() iteration

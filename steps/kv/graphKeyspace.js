@@ -68,4 +68,24 @@ export const graphKeyspace = Object.freeze({
     all: () => 'edges.*',
     allDeep: () => 'edges.>',
   }),
+
+  adj: Object.freeze({
+    outV: Object.freeze({
+      meta: (vertexId) => `adj.outV.${vertexId}.meta`,
+      chunk: (vertexId, chunkId) => `adj.outV.${vertexId}.c.${chunkId}`,
+      labelMeta: (vertexId, label) => `adj.outV.${vertexId}.label.${label}.meta`,
+      labelChunk: (vertexId, label, chunkId) => `adj.outV.${vertexId}.label.${label}.c.${chunkId}`,
+      allForVertex: (vertexId) => `adj.outV.${vertexId}.>`,
+      allLabelForVertex: (vertexId, label) => `adj.outV.${vertexId}.label.${label}.>`,
+    }),
+    inV: Object.freeze({
+      meta: (vertexId) => `adj.inV.${vertexId}.meta`,
+      chunk: (vertexId, chunkId) => `adj.inV.${vertexId}.c.${chunkId}`,
+      labelMeta: (vertexId, label) => `adj.inV.${vertexId}.label.${label}.meta`,
+      labelChunk: (vertexId, label, chunkId) => `adj.inV.${vertexId}.label.${label}.c.${chunkId}`,
+      allForVertex: (vertexId) => `adj.inV.${vertexId}.>`,
+      allLabelForVertex: (vertexId, label) => `adj.inV.${vertexId}.label.${label}.>`,
+    }),
+    all: () => 'adj.>',
+  }),
 })
