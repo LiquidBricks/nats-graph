@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Benchmark Marks Over Time</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #0b1221;
+      --panel: rgba(255, 255, 255, 0.06);
+      --muted: #9fb2d0;
+      --text: #e5ecff;
+      --accent: #52f6be;
+      --accent-2: #7fb0ff;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", "JetBrains Mono", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: radial-gradient(120% 120% at 20% 20%, #1e2a47 0%, #0c1528 45%, #050915 100%);
+      padding: 32px 18px 48px;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px 22px 32px;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.45);
+    }
+    header {
+      display: flex;
+      gap: 14px;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.01em;
+    }
+    header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 720px;
+    }
+    .badge {
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .controls {
+      margin: 18px 0 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .control-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .control {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .control-group .control {
+      flex: 1;
+      min-width: 120px;
+    }
+    .control.compact {
+      padding: 8px 10px;
+    }
+    .control label {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+    select, input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      background: #0f1a33;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .status strong { color: var(--text); }
+    .chart-wrap {
+      background: linear-gradient(145deg, #0f172a, #0b1221);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    canvas { width: 100%; height: 480px; }
+    .table {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      text-align: left;
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+      font-weight: 500;
+    }
+    tr:last-child td { border-bottom: none; }
+    .muted { color: var(--muted); }
+    .empty {
+      text-align: center;
+      padding: 18px 12px;
+      color: var(--muted);
+    }
+    @media (max-width: 640px) {
+      header { flex-direction: column; }
+      canvas { height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <h1>Benchmark Marks Over Time</h1>
+        <p>Plots every benchmark mark produced by <code>run.js</code>. Data is loaded from <code>benchmark/marks</code> (and <code>marks/index.json</code>) so you can see how each task changes across runs.</p>
+      </div>
+      <span class="badge">trend view</span>
+    </header>
+
+    <section class="controls">
+      <div class="control-group compact">
+        <div class="control compact">
+          <label for="suite">Bench suite</label>
+          <select id="suite"></select>
+        </div>
+        <div class="control compact">
+          <label for="provider">Provider</label>
+          <select id="provider"></select>
+        </div>
+        <div class="control compact">
+          <label for="metric">Metric</label>
+          <select id="metric">
+            <option value="ops/s">ops/s (higher is better)</option>
+            <option value="avg (ms)">avg (ms)</option>
+            <option value="p99">p99 (ms)</option>
+            <option value="samples">samples</option>
+          </select>
+        </div>
+      </div>
+      <div class="control">
+        <label for="sortDirection">Sort direction</label>
+        <select id="sortDirection">
+          <option value="asc">lowest → highest</option>
+          <option value="desc">highest → lowest</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="metricMin">Min value (inclusive)</label>
+        <input id="metricMin" type="number" placeholder="−∞" />
+      </div>
+      <div class="control">
+        <label for="metricMax">Max value (inclusive)</label>
+        <input id="metricMax" type="number" placeholder="∞" />
+      </div>
+      <div class="control">
+        <label for="taskFilter">Task filter (contains)</label>
+        <input id="taskFilter" placeholder="e.g. V.out or kv." />
+      </div>
+      <div class="control">
+        <label for="seriesCap">Max series</label>
+        <input id="seriesCap" type="number" min="1" max="60" value="15" />
+      </div>
+    </section>
+
+    <div class="status">
+      <span id="status-text" class="muted">Loading marks…</span>
+      <span id="run-count" class="muted"></span>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="marksChart" aria-label="Benchmark chart" role="img"></canvas>
+    </div>
+
+    <div class="table" id="latest-table"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script type="module">
+    const statusEl = document.getElementById('status-text')
+    const runCountEl = document.getElementById('run-count')
+    const suiteSelect = document.getElementById('suite')
+    const providerSelect = document.getElementById('provider')
+    const metricSelect = document.getElementById('metric')
+    const taskFilterInput = document.getElementById('taskFilter')
+    const seriesCapInput = document.getElementById('seriesCap')
+    const metricMinInput = document.getElementById('metricMin')
+    const metricMaxInput = document.getElementById('metricMax')
+    const sortSelect = document.getElementById('sortDirection')
+    const tableWrap = document.getElementById('latest-table')
+    const ctx = document.getElementById('marksChart').getContext('2d')
+
+    const palette = Array.from({ length: 28 }, (_, i) => `hsl(${(i * 47) % 360} 70% 60%)`)
+
+    const state = {
+      entries: [],
+      chart: null,
+    }
+
+    const defaults = {
+      suite: 'graph',
+      provider: 'nats',
+      metric: 'ops/s',
+      direction: 'asc',
+    }
+
+    const metricLabels = {
+      'ops/s': 'ops/s',
+      'avg (ms)': 'average (ms)',
+      'p99': 'p99 (ms)',
+      'samples': 'samples',
+    }
+
+    async function loadIndex() {
+      const res = await fetch('./marks/index.json')
+      if (!res.ok) {
+        throw new Error('marks/index.json not found. Run the benchmarks to generate it.')
+      }
+      const data = await res.json()
+      const entries = (data.entries || data.runs || []).filter(Boolean)
+      entries.sort((a, b) => new Date(a.timestamp || a.runId) - new Date(b.timestamp || b.runId))
+      return entries
+    }
+
+    function unique(list) {
+      return Array.from(new Set(list.filter(Boolean)))
+    }
+
+    function formatTs(iso) {
+      const d = new Date(iso)
+      if (Number.isNaN(d.getTime())) return iso || 'n/a'
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+    }
+
+    function lastValue(arr) {
+      for (let i = arr.length - 1; i >= 0; i -= 1) {
+        if (arr[i] != null) return arr[i]
+      }
+      return null
+    }
+
+    function renderFilters(entries) {
+      const suites = unique(entries.map(e => e.suite))
+      const providers = unique(entries.map(e => e.provider))
+
+      suiteSelect.innerHTML = suites.map(v => `<option value="${v}">${v}</option>`).join('')
+      providerSelect.innerHTML = providers.map(v => `<option value="${v}">${v}</option>`).join('')
+      if (suites.includes(defaults.suite)) {
+        suiteSelect.value = defaults.suite
+      } else if (suites.length) {
+        suiteSelect.value = suites[0]
+      }
+      if (providers.includes(defaults.provider)) {
+        providerSelect.value = defaults.provider
+      } else if (providers.length) {
+        providerSelect.value = providers[0]
+      }
+      metricSelect.value = defaults.metric
+      sortSelect.value = defaults.direction
+    }
+
+    function buildSeries({ entries, suite, provider, metric, taskFilter, cap, minValue, maxValue, direction }) {
+      const filtered = entries.filter(e => (!suite || e.suite === suite) && (!provider || e.provider === provider))
+      if (!filtered.length) {
+        return { labels: [], datasets: [], series: {}, filtered }
+      }
+
+      filtered.sort((a, b) => new Date(a.timestamp || a.runId) - new Date(b.timestamp || b.runId))
+      const labels = filtered.map(e => `${formatTs(e.timestamp)} · ${e.runId}`)
+
+      const series = {}
+      const useMin = Number.isFinite(minValue) && minValue !== Number.NEGATIVE_INFINITY
+      const useMax = Number.isFinite(maxValue) && maxValue !== Number.POSITIVE_INFINITY
+      filtered.forEach((entry, idx) => {
+        (entry.rows || []).forEach(row => {
+          const task = row.task || 'unknown'
+          const raw = row[metric]
+          const value = Number(raw)
+          if (!Number.isFinite(value)) return
+          if (useMin && value < minValue) return
+          if (useMax && value > maxValue) return
+          if (!series[task]) {
+            series[task] = new Array(filtered.length).fill(null)
+          }
+          series[task][idx] = value
+        })
+      })
+
+      const taskIds = Object.keys(series).filter(t => !taskFilter || t.toLowerCase().includes(taskFilter.toLowerCase()))
+      const dirFactor = direction === 'desc' ? -1 : 1
+      taskIds.sort((a, b) => {
+        const aVal = Number.isFinite(lastValue(series[a])) ? lastValue(series[a]) : Number.NEGATIVE_INFINITY
+        const bVal = Number.isFinite(lastValue(series[b])) ? lastValue(series[b]) : Number.NEGATIVE_INFINITY
+        const diff = aVal - bVal
+        return dirFactor * (Number.isNaN(diff) ? 0 : diff)
+      })
+      const selectedTasks = taskIds.slice(0, cap || taskIds.length)
+
+      const limitedSeries = {}
+      const datasets = selectedTasks.map((task, i) => {
+        limitedSeries[task] = series[task]
+        return {
+          label: task,
+          data: series[task],
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length].replace('hsl', 'hsla').replace(')', ',0.28)'),
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          spanGaps: true,
+        }
+      })
+
+      return { labels, datasets, series: limitedSeries, filtered }
+    }
+
+    function renderTable({ series, metric, direction }) {
+      const tasks = Object.keys(series || {})
+      if (!tasks.length) {
+        tableWrap.innerHTML = '<div class="empty">No task data found for this selection.</div>'
+        return
+      }
+
+      const rows = tasks.map(task => {
+        const vals = series[task]
+        return { task, latest: lastValue(vals), history: vals }
+      })
+
+      const dirFactor = direction === 'desc' ? -1 : 1
+      rows.sort((a, b) => {
+        const aVal = Number.isFinite(a.latest) ? a.latest : Number.NEGATIVE_INFINITY
+        const bVal = Number.isFinite(b.latest) ? b.latest : Number.NEGATIVE_INFINITY
+        return dirFactor * (aVal - bVal)
+      })
+
+      const head = `<thead><tr><th>Task</th><th>Latest ${metricLabels[metric] || metric}</th><th>History</th></tr></thead>`
+      const body = rows.map(r => {
+        const history = (r.history || []).map(v => (v == null ? '–' : v)).join(', ')
+        const val = r.latest == null ? '–' : r.latest
+        return `<tr><td>${r.task}</td><td>${val}</td><td class="muted">${history}</td></tr>`
+      }).join('')
+      tableWrap.innerHTML = `<table>${head}<tbody>${body}</tbody></table>`
+    }
+
+    const parseLimitInput = (element, fallback) => {
+      const raw = element.value.trim()
+      if (!raw) return fallback
+      const parsed = Number(raw)
+      return Number.isFinite(parsed) ? parsed : fallback
+    }
+
+    function updateChart() {
+      const suite = suiteSelect.value
+      const provider = providerSelect.value
+      const metric = metricSelect.value
+      const taskFilter = taskFilterInput.value.trim()
+      const cap = Number(seriesCapInput.value) || undefined
+      const direction = sortSelect.value
+
+      const minValue = parseLimitInput(metricMinInput, Number.NEGATIVE_INFINITY)
+      const maxValue = parseLimitInput(metricMaxInput, Number.POSITIVE_INFINITY)
+
+      const { labels, datasets, series, filtered } = buildSeries({
+        entries: state.entries,
+        suite,
+        provider,
+        metric,
+        taskFilter,
+        cap,
+        minValue,
+        maxValue,
+        direction,
+      })
+
+      if (!labels.length || !datasets.length) {
+        statusEl.textContent = 'No data for this combination. Run more benchmarks or relax filters.'
+        if (state.chart) {
+          state.chart.data.labels = []
+          state.chart.data.datasets = []
+          state.chart.update()
+        }
+        renderTable({ series: {}, metric, direction })
+        runCountEl.textContent = ''
+        return
+      }
+
+      const config = {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#d7def5' },
+              title: { display: true, text: metricLabels[metric] || metric, color: '#d7def5' },
+            },
+            x: {
+              grid: { color: 'rgba(255,255,255,0.03)' },
+              ticks: { color: '#d7def5', maxRotation: 25, autoSkip: true },
+            },
+          },
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: '#d7def5', boxWidth: 14, boxHeight: 14, usePointStyle: true },
+            },
+            tooltip: {
+              callbacks: {
+                title: (items) => labels[items[0].dataIndex],
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.formattedValue}`,
+              },
+            },
+          },
+        },
+      }
+
+      if (!state.chart) {
+        state.chart = new Chart(ctx, config)
+      } else {
+        state.chart.data.labels = labels
+        state.chart.data.datasets = datasets
+        state.chart.options = config.options
+        state.chart.update()
+      }
+
+      renderTable({ series, metric, direction })
+      statusEl.textContent = `${datasets.length} task${datasets.length === 1 ? '' : 's'} · metric ${metricLabels[metric] || metric}`
+      runCountEl.textContent = `${filtered.length} run${filtered.length === 1 ? '' : 's'}`
+    }
+
+    function attachListeners() {
+      [suiteSelect, providerSelect, metricSelect, taskFilterInput, seriesCapInput, metricMinInput, metricMaxInput, sortSelect].forEach(el => {
+        el.addEventListener('input', () => updateChart())
+        el.addEventListener('change', () => updateChart())
+      })
+    }
+
+    async function init() {
+      try {
+        state.entries = await loadIndex()
+        if (!state.entries.length) {
+          statusEl.textContent = 'No benchmark data found in benchmark/marks.'
+          return
+        }
+        renderFilters(state.entries)
+        attachListeners()
+        updateChart()
+      } catch (err) {
+        console.error(err)
+        statusEl.textContent = err.message || 'Failed to load benchmark data.'
+      }
+    }
+
+    init()
+  </script>
+</body>
+</html>

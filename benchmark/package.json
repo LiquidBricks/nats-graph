@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "run.js",
   "scripts": {
-    "test": "node run.js"
+    "start": "node server.js",
+    "test": "clear && node run.js"
   },
   "type": "module",
   "author": "",

@@ -2,186 +2,166 @@
 // Basic micro-benchmarks for the graph API using tinybench.
 // Usage:
 //   npm i -D tinybench
-//   node main/bootstrap/components/fullflowService/nats/graph/benchmark/run.js
+//   node benchmark/run.js
+//
+// Runs the suite against both kv providers (NATS + in-memory).
 
+import { Graph } from '../graph/graph.js'
+import fs from 'node:fs'
 import path from 'node:path'
-import url from 'node:url'
-import { Bench } from 'tinybench'
-import { createNatsContext } from '@liquid-bricks/shared-providers/nats-context'
+import { createBench } from './steps/index.js'
+import { natsProviderConfig } from './providers/nats.js'
+import { memoryProviderConfig } from './providers/memory.js'
+import { createNatsProviderBench } from './providerBenches/nats.js'
+import { createMemoryProviderBench } from './providerBenches/memory.js'
 
-
-async function main() {
-
-  const connection = createNatsContext({ servers: "10.88.0.93" })
-  await connection.Kvm()
-  // Import graph API
-  const base = path.dirname(path.dirname(url.fileURLToPath(import.meta.url)))
-  const { addV } = await import(url.pathToFileURL(path.join(base, 'addV.js')))
-  const { addE } = await import(url.pathToFileURL(path.join(base, 'addE.js')))
-  const { V } = await import(url.pathToFileURL(path.join(base, 'V.js')))
-  const { E } = await import(url.pathToFileURL(path.join(base, 'E.js')))
-  const { graph } = await import(url.pathToFileURL(path.join(base, 'graph/graph.js')))
-
-  // Warm up: ensure module init costs don't skew short benches
-  await graph().drop()
-
-  const bench = new Bench({ time: 500, warmup: 100 })
-
-  const items = []
-  for (let i = 0; i < 2000; i++) { items.push(i) }
-  // Task: addV (create)
-  bench.add('addV', async () => {
-    const vItrArray = await Promise.all(items.map(() => addV('bench_v')))
-    const vItrResult = await Promise.all(vItrArray.map(i => Array.fromAsync(i)))
-  })
-  // Prepare two vertices for edge tasks
-  const [v1] = await Array.fromAsync(await addV('bench_src'))
-  const [v2] = await Array.fromAsync(await addV('bench_dst'))
-
-  // bench.add('addE', async () => Array.fromAsync(await addE(`bench_e`, v1.id(), v2.id())))
-
-  // // Task: addV + drop (create and immediately delete a vertex)
-  // bench.add('addV + drop', async () => {
-  //   const [v] = await Array.fromAsync(await addV('bench_v'))
-  //   await v.drop()
-  // })
-
-
-  // // Task: addE + drop (create and immediately delete an edge)
-  // bench.add('addE + drop', async () => {
-  //   const [e] = await Array.fromAsync(await addE('bench_e', v1.id(), v2.id()))
-  //   await e.drop()
-  // })
-
-  // // Prepare a small star for traversal tasks
-  // const [center] = await Array.fromAsync(await addV('center'))
-  // const [cv] = await Array.fromAsync(await V(center.id()))
-  // const neighbors = []
-  // for (let i = 0; i < 5; i++) {
-  //   const [nv] = await Array.fromAsync(await addV('n'))
-  //   neighbors.push(nv)
-  //   await Array.fromAsync(await addE('link', center.id(), nv.id()))
-  // }
-
-  // // Task: V(center).outE().id()
-  // bench.add('V.outE().id()', async () => {
-  //   const ids = []
-  //   for await (const e of await cv.outE()) ids.push(e.id())
-  // })
-
-  // // Task: V(center).out().id()
-  // bench.add('V.out().id()', async () => {
-  //   const ids = []
-  //   for await (const v of await cv.out()) ids.push(v.id())
-  // })
-
-  // // Prepare a single edge for edge->vertex tasks
-  // const [edge1] = await Array.fromAsync(await addE('one', v1.id(), v2.id()))
-
-  // bench.add('E.outV().id()', async () => {
-  //   const [e] = await Array.fromAsync(await E(edge1.id()))
-  //   const [ov] = await Array.fromAsync(await e.outV())
-  //   ov.id()
-  // })
-
-  // bench.add('E.inV().id()', async () => {
-  //   const [e] = await Array.fromAsync(await E(edge1.id()))
-  //   const [iv] = await Array.fromAsync(await e.inV())
-  //   iv.id()
-  // })
-
-  // // Property set + has
-  // bench.add('V.property + has()', async () => {
-  //   const [v] = await Array.fromAsync(await addV('p'))
-  //   await v.property('x', 1)
-  //   const out = await Array.fromAsync(await v.has('x', 1))
-  //   if (out.length !== 1) throw new Error('has failed')
-  //   await v.drop()
-  // })
-
-  // // edgeEndpoints on a batch
-  // const batchEdges = []
-  // for (let i = 0; i < 10; i++) {
-  //   const [sx] = await Array.fromAsync(await addV('s'))
-  //   const [tx] = await Array.fromAsync(await addV('t'))
-  //   const [ex] = await Array.fromAsync(await addE('b', sx.id(), tx.id()))
-  //   batchEdges.push(ex.id())
-  // }
-
-  // {
-
-
-  //   const [a] = await Array.fromAsync(await addV('A'))
-  //   const [b] = await Array.fromAsync(await addV('B'))
-  //   const [eCreated] = await Array.fromAsync(await addE('t', a.id(), b.id()))
-  //   const [eobj] = await Array.fromAsync(await E(eCreated.id()))
-  //   await eobj.property('w', 1)
-
-
-  //   bench.add('E.id()', async () => { await eobj.id() })
-  //   bench.add('E.label()', async () => { await eobj.label() })
-  //   bench.add('E.properties()', async () => { await eobj.properties('w') })
-  //   bench.add('E.valueMap()', async () => { await eobj.valueMap() })
-  //   bench.add('E.has(label)', async () => { await Array.fromAsync(await eobj.has('label', 't')) })
-  //   bench.add('E.has(prop)', async () => { await Array.fromAsync(await eobj.has('w', 1)) })
-  //   bench.add('E.property()', async () => { await eobj.property('w2', 2) })
-  //   bench.add('E.outV()', async () => { for await (const _v of await eobj.outV()) { } })
-  //   bench.add('E.inV()', async () => { for await (const _v of await eobj.inV()) { } })
-  //   bench.add('E.bothV()', async () => { for await (const _v of await eobj.bothV()) { } })
-  //   bench.add('E.otherV()', async () => { for await (const _v of await eobj.otherV(a.id())) { } })
-  //   bench.add('E.drop()', async () => {
-  //     const [x] = await Array.fromAsync(await addV('x'));
-  //     const [y] = await Array.fromAsync(await addV('y'));
-  //     const [ee] = await Array.fromAsync(await addE('d', x.id(), y.id()));
-  //     const [eo] = await Array.fromAsync(await E(ee.id())); await eo.drop()
-  //   })
-  // }
-
-
-  // {
-
-  //   const [a] = await Array.fromAsync(await addV('person'))
-  //   const [b] = await Array.fromAsync(await addV('person'))
-  //   const [c] = await Array.fromAsync(await addV('project'))
-  //   const [d] = await Array.fromAsync(await addV('person'))
-  //   await Array.fromAsync(await addE('knows', a.id(), b.id()))
-  //   await Array.fromAsync(await addE('created', a.id(), c.id()))
-  //   await Array.fromAsync(await addE('knows', d.id(), a.id()))
-  //   const [va] = await Array.fromAsync(await V(a.id()))
-  //   await va.property('name', 'alpha')
-  //   await va.property('score', 42)
-
-  //   bench.add('V.id()', async () => { await va.id() })
-  //   bench.add('V.label()', async () => { await va.label() })
-  //   bench.add('V.properties("name")', async () => { await va.properties('name') })
-  //   bench.add('V.valueMap()', async () => { await va.valueMap() })
-  //   bench.add('V.has(label)', async () => { await Array.fromAsync(await va.has('label', 'person')) })
-  //   bench.add('V.has(prop)', async () => { await Array.fromAsync(await va.has('name', 'alpha')) })
-  //   bench.add('V.property()', async () => { await va.property('bench', 1) })
-  //   bench.add('V.outE()', async () => { for await (const _e of await va.outE()) { } })
-  //   bench.add('V.out()', async () => { for await (const _v of await va.out()) { } })
-  //   bench.add('V.inE()', async () => { for await (const _e of await va.inE()) { } })
-  //   bench.add('V.in()', async () => { for await (const _v of await va.in()) { } })
-  //   bench.add('V.bothE()', async () => { for await (const _e of await va.bothE()) { } })
-  //   bench.add('V.drop()', async () => { const [vx] = await Array.fromAsync(await addV('tmp')); await vx.drop() })
-
-
-  // }
-
-
-  // Run benchmarks
-  await bench.run()
-
-  // Pretty print results
+function formatRows(bench) {
   const rows = bench.tasks.map(({ name, result: r }) => ({
     task: name,
-    'ops/s': Number(r.hz.toFixed(2)),
-    'avg (ms)': Number(r.mean * 1000).toFixed(3),
-    '±%': Number(r.rme.toFixed(2)),
-    'p99': r.p99.toFixed(2),
+    'ops/s': Number(r.hz.toFixed(0)),
+    'avg (ms)': Number(r.mean).toFixed(1),
+    '±%': Number(r.rme.toFixed(0)),
+    'p99': r.p99.toFixed(1),
     samples: r.samples.length,
   }))
-  console.table(rows)
+  return rows.sort((a, b) => a['ops/s'] < b['ops/s'] ? -1 : 1)
+}
+
+const marksRoot = path.resolve(import.meta.dirname, 'marks')
+const runTimestamp = new Date().toISOString()
+const safeRunTimestamp = runTimestamp.replace(/[:.]/g, '-')
+const runMarksDir = path.join(marksRoot, safeRunTimestamp)
+fs.mkdirSync(runMarksDir, { recursive: true })
+
+function rebuildMarksIndex() {
+  try {
+    const entries = []
+    const runDirs = fs.readdirSync(marksRoot, { withFileTypes: true }).filter(d => d.isDirectory())
+    for (const dir of runDirs) {
+      const runId = dir.name
+      const dirPath = path.join(marksRoot, runId)
+      const files = fs.readdirSync(dirPath).filter(f => f.endsWith('.json'))
+      for (const file of files) {
+        const filePath = path.join(dirPath, file)
+        try {
+          const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+          entries.push({ runId, file, ...parsed })
+        } catch (err) {
+          console.error(`Skipping mark file ${filePath}`, err)
+        }
+      }
+    }
+    entries.sort((a, b) => {
+      const aTs = new Date(a.timestamp || a.runId).getTime()
+      const bTs = new Date(b.timestamp || b.runId).getTime()
+      return aTs - bTs
+    })
+    const indexFile = path.join(marksRoot, 'index.json')
+    fs.writeFileSync(indexFile, JSON.stringify({ generatedAt: new Date().toISOString(), entries }, null, 2) + '\n')
+    return indexFile
+  } catch (err) {
+    console.error('Failed to rebuild benchmark marks index', err)
+    return null
+  }
+}
+
+function writeMark({ suite, provider, benchDurationMs, rows }) {
+  try {
+    const timestamp = new Date().toISOString()
+    const safeProvider = provider.replace(/[^a-z0-9-_]/gi, '_')
+    const payload = {
+      suite,
+      provider,
+      timestamp,
+      durationSeconds: benchDurationMs / 1000,
+      rows,
+    }
+    const outFile = path.join(runMarksDir, `${suite}-${safeProvider}.json`)
+    fs.writeFileSync(outFile, JSON.stringify(payload, null, 2) + '\n')
+    return outFile
+  } catch (err) {
+    console.error('Failed to write benchmark mark file', err)
+    return null
+  }
+}
+
+async function runGraphBenchForProvider({ provider, kvConfig }) {
+  const graph = Graph({ kv: provider, kvConfig })
+  const { g } = graph
+
+  try {
+    await g.drop()
+    const bench = await createBench(g)
+    const benchStartedAt = Date.now()
+    await bench.run()
+    const benchDurationMs = Date.now() - benchStartedAt
+    const rows = formatRows(bench)
+    const outFile = writeMark({ suite: 'graph', provider, benchDurationMs, rows })
+    return { rows, benchDurationMs, outFile }
+  } finally {
+    await graph.close?.()
+  }
+}
+
+async function runProviderBench({ provider, createBenchFn }) {
+  const { bench, kvStore } = await createBenchFn()
+  try {
+    const benchStartedAt = Date.now()
+    await bench.run()
+    const benchDurationMs = Date.now() - benchStartedAt
+    const rows = formatRows(bench)
+    const outFile = writeMark({ suite: 'provider', provider, benchDurationMs, rows })
+    return { rows, benchDurationMs, outFile }
+  } finally {
+    await kvStore?.close?.()
+  }
+}
+
+async function main() {
+  const providers = [
+    { config: natsProviderConfig(), createProviderBench: createNatsProviderBench },
+    { config: memoryProviderConfig(), createProviderBench: createMemoryProviderBench },
+  ]
+  const graphCombinedRows = []
+  const kvCombinedRows = []
+
+  for (const { config, createProviderBench } of providers) {
+    const providerLabel = config.provider
+    console.log(`\nRunning provider-only benchmarks for "${providerLabel}"`)
+    try {
+      const { rows, benchDurationMs, outFile } = await runProviderBench({ provider: providerLabel, createBenchFn: createProviderBench })
+      kvCombinedRows.push(...rows.map(r => ({ provider: providerLabel, ...r })))
+      console.table(rows)
+      console.log(`Benchmark duration: ${(benchDurationMs / 1000).toFixed(2)}s`)
+      if (outFile) console.log(`Saved benchmark output to ${outFile}`)
+    } catch (err) {
+      console.error(`Provider benchmarks failed for "${providerLabel}"`, err)
+    }
+
+    console.log(`\nRunning graph-step benchmarks for "${providerLabel}"`)
+    try {
+      const { rows, benchDurationMs, outFile } = await runGraphBenchForProvider(config)
+      graphCombinedRows.push(...rows.map(r => ({ provider: providerLabel, ...r })))
+      console.table(rows)
+      console.log(`Benchmark duration: ${(benchDurationMs / 1000).toFixed(2)}s`)
+      if (outFile) console.log(`Saved benchmark output to ${outFile}`)
+    } catch (err) {
+      console.error(`Graph benchmarks failed for "${providerLabel}"`, err)
+    }
+  }
+
+  if (kvCombinedRows.length) {
+    console.log('\nProvider-level results (higher ops/s is better)')
+    console.table(kvCombinedRows)
+  }
+
+  if (graphCombinedRows.length) {
+    console.log('\nGraph traversal results (higher ops/s is better)')
+    console.table(graphCombinedRows)
+  }
+
+  const indexFile = rebuildMarksIndex()
+  if (indexFile) console.log(`Updated marks index at ${indexFile}`)
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })
