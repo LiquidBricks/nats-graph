@@ -1,4 +1,5 @@
 import { operationResultTypeKey, operationFactoryKey, operationResultType as sharedElementType, operationNameKey, operationName, operationStreamWrapperKey, Errors } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 export const vertexPropertyStep = {
   [operationNameKey]: operationName.property,
@@ -9,7 +10,7 @@ export const vertexPropertyStep = {
     const t = typeof v; diagnostics?.require(v !== undefined && (t === 'string' || t === 'number' || t === 'boolean' || t === 'object'), Errors.PROPERTY_INVALID_VALUE, 'Invalid value type for property()', { value: v, type: t });
     return (source) => (async function* () {
       for await (const vertexId of source) {
-        await kvStore.update(`node.${vertexId}.property.${k}`, JSON.stringify(v));
+        await kvStore.update(graphKeyspace.vertex.property(vertexId, k), JSON.stringify(v));
         yield vertexId;
       }
     })()
@@ -22,7 +23,7 @@ export const vertexPropertyStep = {
     const t = typeof v;
     diagnostics?.require(v !== undefined && (t === 'string' || t === 'number' || t === 'boolean' || t === 'object'), Errors.PROPERTY_INVALID_VALUE, 'Invalid value type for property()', { value: v, type: t });
     async function* itr() {
-      await kvStore.update(`node.${vertexId}.property.${k}`, JSON.stringify(v));
+      await kvStore.update(graphKeyspace.vertex.property(vertexId, k), JSON.stringify(v));
       yield vertexId;
     }
 
@@ -43,7 +44,7 @@ export const edgePropertyStep = {
     const t = typeof v; diagnostics?.require(v !== undefined && (t === 'string' || t === 'number' || t === 'boolean' || t === 'object'), Errors.PROPERTY_INVALID_VALUE, 'Invalid value type for property()', { value: v, type: t });
     return (source) => (async function* () {
       for await (const edgeId of source) {
-        await kvStore.update(`edge.${edgeId}.property.${k}`, JSON.stringify(v));
+        await kvStore.update(graphKeyspace.edge.property(edgeId, k), JSON.stringify(v));
         yield edgeId;
       }
     })()
@@ -56,7 +57,7 @@ export const edgePropertyStep = {
     const t = typeof v;
     diagnostics?.require(v !== undefined && (t === 'string' || t === 'number' || t === 'boolean' || t === 'object'), Errors.PROPERTY_INVALID_VALUE, 'Invalid value type for property()', { value: v, type: t });
     async function* iterator() {
-      await kvStore.update(`edge.${edgeId}.property.${k}`, JSON.stringify(v));
+      await kvStore.update(graphKeyspace.edge.property(edgeId, k), JSON.stringify(v));
       yield edgeId;
     }
 

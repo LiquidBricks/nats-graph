@@ -1,51 +1,44 @@
 
 import { operationResultTypeKey, operationFactoryKey, operationResultType, operationNameKey, operationName, operationStreamWrapperKey } from '../types.js'
-
-const removeFromArray = async (store, key, value) => {
-  const raw = await store.get(key).then((d) => d.string()).catch(() => '[]')
-  let items
-  try { items = JSON.parse(raw || '[]') } catch { items = [] }
-  if (!Array.isArray(items)) items = []
-  const next = items.filter((entry) => String(entry) !== String(value))
-  await store.update(key, JSON.stringify(next)).catch(() => { })
-}
+import { graphKeyspace } from '../kv/graphKeyspace.js'
+import { getStringOrNull, removeFromJsonArray } from '../kv/kvUtils.js'
 
 // Internal helper to remove an edge and all its indices/adjacency entries
 const dropEdgeById = async (kvStore, edgeId) => {
-  const incoming = await kvStore.get(`edge.${edgeId}.incoming`).then((d) => d.string()).catch(() => null)
-  const outgoing = await kvStore.get(`edge.${edgeId}.outgoing`).then((d) => d.string()).catch(() => null)
-  const label = await kvStore.get(`edge.${edgeId}.label`).then((d) => d.string()).catch(() => null)
+  const incoming = await getStringOrNull(kvStore, graphKeyspace.edge.incoming(edgeId))
+  const outgoing = await getStringOrNull(kvStore, graphKeyspace.edge.outgoing(edgeId))
+  const label = await getStringOrNull(kvStore, graphKeyspace.edge.label(edgeId))
 
-  await kvStore.delete(`edge.${edgeId}`).catch(() => { })
+  await kvStore.delete(graphKeyspace.edge.record(edgeId)).catch(() => { })
 
-  const edgeKeys = await kvStore.keys(`edge.${edgeId}.*`).catch(() => [])
+  const edgeKeys = await kvStore.keys(graphKeyspace.edge.descendantsPattern(edgeId)).catch(() => [])
   for await (const key of edgeKeys) {
     await kvStore.delete(key).catch(() => { })
   }
 
   if (incoming) {
-    await kvStore.delete(`node.${incoming}.outE.${edgeId}`).catch(() => { })
-    if (label) await kvStore.delete(`node.${incoming}.outE.${label}.${edgeId}`).catch(() => { })
-    await removeFromArray(kvStore, `node.${incoming}.outE.__index`, edgeId)
-    if (label) await removeFromArray(kvStore, `node.${incoming}.outE.${label}.__index`, edgeId)
+    await kvStore.delete(graphKeyspace.vertex.outE.key(incoming, edgeId)).catch(() => { })
+    if (label) await kvStore.delete(graphKeyspace.vertex.outE.keyByLabel(incoming, label, edgeId)).catch(() => { })
+    await removeFromJsonArray(kvStore, graphKeyspace.vertex.outE.index(incoming), edgeId)
+    if (label) await removeFromJsonArray(kvStore, graphKeyspace.vertex.outE.indexByLabel(incoming, label), edgeId)
     if (outgoing) {
-      await removeFromArray(kvStore, `node.${incoming}.outV.__index`, outgoing)
-      if (label) await removeFromArray(kvStore, `node.${incoming}.outV.${label}.__index`, outgoing)
+      await removeFromJsonArray(kvStore, graphKeyspace.vertex.outV.index(incoming), outgoing)
+      if (label) await removeFromJsonArray(kvStore, graphKeyspace.vertex.outV.indexByLabel(incoming, label), outgoing)
     }
   }
 
   if (outgoing) {
-    await kvStore.delete(`node.${outgoing}.inE.${edgeId}`).catch(() => { })
-    if (label) await kvStore.delete(`node.${outgoing}.inE.${label}.${edgeId}`).catch(() => { })
-    await removeFromArray(kvStore, `node.${outgoing}.inE.__index`, edgeId)
-    if (label) await removeFromArray(kvStore, `node.${outgoing}.inE.${label}.__index`, edgeId)
+    await kvStore.delete(graphKeyspace.vertex.inE.key(outgoing, edgeId)).catch(() => { })
+    if (label) await kvStore.delete(graphKeyspace.vertex.inE.keyByLabel(outgoing, label, edgeId)).catch(() => { })
+    await removeFromJsonArray(kvStore, graphKeyspace.vertex.inE.index(outgoing), edgeId)
+    if (label) await removeFromJsonArray(kvStore, graphKeyspace.vertex.inE.indexByLabel(outgoing, label), edgeId)
     if (incoming) {
-      await removeFromArray(kvStore, `node.${outgoing}.inV.__index`, incoming)
-      if (label) await removeFromArray(kvStore, `node.${outgoing}.inV.${label}.__index`, incoming)
+      await removeFromJsonArray(kvStore, graphKeyspace.vertex.inV.index(outgoing), incoming)
+      if (label) await removeFromJsonArray(kvStore, graphKeyspace.vertex.inV.indexByLabel(outgoing, label), incoming)
     }
   }
 
-  await kvStore.delete(`edges.${edgeId}`).catch(() => { })
+  await kvStore.delete(graphKeyspace.edgesIndex.record(edgeId)).catch(() => { })
 
   return { incoming, outgoing, label }
 }
@@ -62,8 +55,9 @@ export const dropGraph = {
         }
       }
       await Promise.all([
-        deleteByPattern('node.>'),
-        deleteByPattern('edge.>')
+        deleteByPattern(graphKeyspace.vertex.allDeep()),
+        deleteByPattern(graphKeyspace.edge.allDeep()),
+        deleteByPattern(graphKeyspace.edgesIndex.allDeep())
       ])
     })()
   },
@@ -76,8 +70,9 @@ export const dropGraph = {
         }
       }
       await Promise.all([
-        deleteByPattern('node.>'),
-        deleteByPattern('edge.>')
+        deleteByPattern(graphKeyspace.vertex.allDeep()),
+        deleteByPattern(graphKeyspace.edge.allDeep()),
+        deleteByPattern(graphKeyspace.edgesIndex.allDeep())
       ])
     }
 
@@ -104,18 +99,18 @@ export const dropVertex = {
           } catch { }
         }
         await Promise.all([
-          loadIndex(`node.${vertexId}.outE.__index`),
-          loadIndex(`node.${vertexId}.inE.__index`)
+          loadIndex(graphKeyspace.vertex.outE.index(vertexId)),
+          loadIndex(graphKeyspace.vertex.inE.index(vertexId))
         ])
 
         // If indices are missing, fall back to scanning keys
         if (incident.size === 0) {
-          const outKeys = await kvStore.keys(`node.${vertexId}.outE.*`).catch(() => [])
+          const outKeys = await kvStore.keys(graphKeyspace.vertex.outE.scanFallbackPattern(vertexId)).catch(() => [])
           for await (const key of outKeys) {
             const tail = key.split('.').pop()
             if (tail && tail !== '__index') incident.add(tail)
           }
-          const inKeys = await kvStore.keys(`node.${vertexId}.inE.*`).catch(() => [])
+          const inKeys = await kvStore.keys(graphKeyspace.vertex.inE.scanFallbackPattern(vertexId)).catch(() => [])
           for await (const key of inKeys) {
             const tail = key.split('.').pop()
             if (tail && tail !== '__index') incident.add(tail)
@@ -139,13 +134,18 @@ export const dropVertex = {
 
         for (const item of neighborAdjDeletes) {
           const { side, neighbor, label, me } = JSON.parse(item)
-          await kvStore.delete(`node.${neighbor}.${side}.${me}`).catch(() => { })
-          if (label) await kvStore.delete(`node.${neighbor}.${side}.${label}.${me}`).catch(() => { })
+          if (side === 'inV') {
+            await kvStore.delete(graphKeyspace.vertex.inV.key(neighbor, me)).catch(() => { })
+            if (label) await kvStore.delete(graphKeyspace.vertex.inV.keyByLabel(neighbor, label, me)).catch(() => { })
+          } else {
+            await kvStore.delete(graphKeyspace.vertex.outV.key(neighbor, me)).catch(() => { })
+            if (label) await kvStore.delete(graphKeyspace.vertex.outV.keyByLabel(neighbor, label, me)).catch(() => { })
+          }
         }
 
         // Finally remove the vertex and all its keys
-        await kvStore.delete(`node.${vertexId}`).catch(() => { })
-        const nodeKeys = await kvStore.keys(`node.${vertexId}.*`).catch(() => [])
+        await kvStore.delete(graphKeyspace.vertex.record(vertexId)).catch(() => { })
+        const nodeKeys = await kvStore.keys(graphKeyspace.vertex.descendantsPattern(vertexId)).catch(() => [])
         for await (const key of nodeKeys) {
           await kvStore.delete(key).catch(() => { })
         }
@@ -164,17 +164,17 @@ export const dropVertex = {
         } catch { }
       }
       await Promise.all([
-        loadIndex(`node.${vertexId}.outE.__index`),
-        loadIndex(`node.${vertexId}.inE.__index`)
+        loadIndex(graphKeyspace.vertex.outE.index(vertexId)),
+        loadIndex(graphKeyspace.vertex.inE.index(vertexId))
       ])
 
       if (incident.size === 0) {
-        const outKeys = await kvStore.keys(`node.${vertexId}.outE.*`).catch(() => [])
+        const outKeys = await kvStore.keys(graphKeyspace.vertex.outE.scanFallbackPattern(vertexId)).catch(() => [])
         for await (const key of outKeys) {
           const tail = key.split('.').pop()
           if (tail && tail !== '__index') incident.add(tail)
         }
-        const inKeys = await kvStore.keys(`node.${vertexId}.inE.*`).catch(() => [])
+        const inKeys = await kvStore.keys(graphKeyspace.vertex.inE.scanFallbackPattern(vertexId)).catch(() => [])
         for await (const key of inKeys) {
           const tail = key.split('.').pop()
           if (tail && tail !== '__index') incident.add(tail)
@@ -194,12 +194,17 @@ export const dropVertex = {
 
       for (const item of neighborAdjDeletes) {
         const { side, neighbor, label, me } = JSON.parse(item)
-        await kvStore.delete(`node.${neighbor}.${side}.${me}`).catch(() => { })
-        if (label) await kvStore.delete(`node.${neighbor}.${side}.${label}.${me}`).catch(() => { })
+        if (side === 'inV') {
+          await kvStore.delete(graphKeyspace.vertex.inV.key(neighbor, me)).catch(() => { })
+          if (label) await kvStore.delete(graphKeyspace.vertex.inV.keyByLabel(neighbor, label, me)).catch(() => { })
+        } else {
+          await kvStore.delete(graphKeyspace.vertex.outV.key(neighbor, me)).catch(() => { })
+          if (label) await kvStore.delete(graphKeyspace.vertex.outV.keyByLabel(neighbor, label, me)).catch(() => { })
+        }
       }
 
-      await kvStore.delete(`node.${vertexId}`).catch(() => { })
-      const nodeKeys = await kvStore.keys(`node.${vertexId}.*`).catch(() => [])
+      await kvStore.delete(graphKeyspace.vertex.record(vertexId)).catch(() => { })
+      const nodeKeys = await kvStore.keys(graphKeyspace.vertex.descendantsPattern(vertexId)).catch(() => [])
       for await (const key of nodeKeys) {
         await kvStore.delete(key).catch(() => { })
       }

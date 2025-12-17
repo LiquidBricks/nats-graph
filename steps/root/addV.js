@@ -1,5 +1,6 @@
 import { uniqueID } from '../../config.js'
 import { operationResultTypeKey, operationFactoryKey, operationResultType, operationNameKey, operationName, operationStreamWrapperKey, Errors } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 export const addV = {
   [operationNameKey]: operationName.addV,
@@ -10,9 +11,9 @@ export const addV = {
 
       const id = uniqueID();
       await Promise.all([
-        kvStore.create(`node.${id}`, id),
-        kvStore.create(`node.${id}.label`, label),
-        kvStore.create(`node.${id}.label.${label}`, ""),
+        kvStore.create(graphKeyspace.vertex.record(id), id),
+        kvStore.create(graphKeyspace.vertex.label(id), label),
+        kvStore.create(graphKeyspace.vertex.labelMarker(id, label), ""),
       ])
       yield id
     })()
@@ -23,9 +24,9 @@ export const addV = {
     async function* itr() {
       const id = uniqueID();
       await Promise.all([
-        kvStore.create(`node.${id}`, id),
-        kvStore.create(`node.${id}.label`, label),
-        kvStore.create(`node.${id}.label.${label}`, ""),
+        kvStore.create(graphKeyspace.vertex.record(id), id),
+        kvStore.create(graphKeyspace.vertex.label(id), label),
+        kvStore.create(graphKeyspace.vertex.labelMarker(id, label), ""),
       ])
       yield id
     }

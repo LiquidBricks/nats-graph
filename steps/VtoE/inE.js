@@ -1,4 +1,5 @@
 import { operationFactoryKey, operationNameKey, operationName, operationResultType, operationResultTypeKey, Errors } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 const normalizeLabels = (args) => {
   if (!Array.isArray(args)) return []
@@ -10,8 +11,8 @@ const normalizeLabels = (args) => {
 const collectEdgeIds = async ({ store, vertexId, labels = [], dedupe }) => {
   const ids = new Set()
   const patterns = labels.length > 0
-    ? labels.map((label) => `node.${vertexId}.inE.${label}.>`)
-    : [`node.${vertexId}.inE.>`]
+    ? labels.map((label) => graphKeyspace.vertex.inE.patternByLabel(vertexId, label))
+    : [graphKeyspace.vertex.inE.pattern(vertexId)]
 
   for (const pattern of patterns) {
     const keys = await store.keys(pattern).catch(() => [])

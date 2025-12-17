@@ -31,7 +31,7 @@ export async function registerVertexSteps({ bench, g }) {
   bench.add('V.limit()', async () => { await g.V(vertexSet).limit(2) })
   bench.add('V.tail()', async () => { await g.V(vertexSet).tail(2) })
   bench.add('V.count()', async () => { await g.V(vertexSet).count() })
-  bench.add('V().has(label)', async () => { await g.V().has('label', 'person') })
+  // bench.add('V().has(label)', async () => { await g.V().has('label', 'person') })
   bench.add('V.filter()', async () => { await g.V([a, b, d]).filter((__) => __.out()) })
   bench.add('V.and()', async () => { await g.V([a, b, d]).and((__) => __.out(), (__) => __.has('score', 42)) })
   bench.add('V.or()', async () => { await g.V([a, b, d]).or((__) => __.out(), (__) => __.has('score', 7)) })

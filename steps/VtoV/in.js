@@ -7,6 +7,7 @@ import {
   operationStreamWrapperKey,
   Errors
 } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 const normalizeLabels = (args) => {
   if (!Array.isArray(args)) return []
@@ -30,7 +31,7 @@ export const inStep = {
         try {
           if (wanted.size > 0) {
             for (const label of wanted) {
-              const keys = await store.keys(`node.${vertexId}.inV.${label}.*`)
+              const keys = await store.keys(graphKeyspace.vertex.inV.patternByLabel(vertexId, label))
               for await (const key of keys) {
                 const fromId = key.split('.').pop()
                 if (!fromId || fromId === '__index' || seen.has(fromId)) continue
@@ -39,7 +40,7 @@ export const inStep = {
               }
             }
           } else {
-            const keys = await store.keys(`node.${vertexId}.inV.*`)
+            const keys = await store.keys(graphKeyspace.vertex.inV.pattern(vertexId))
             for await (const key of keys) {
               const fromId = key.split('.').pop()
               if (!fromId || fromId === '__index' || seen.has(fromId)) continue
@@ -68,7 +69,7 @@ export const inStep = {
       try {
         if (wanted.size > 0) {
           for (const label of wanted) {
-            const keys = await store.keys(`node.${vertexId}.inV.${label}.*`)
+            const keys = await store.keys(graphKeyspace.vertex.inV.patternByLabel(vertexId, label))
             for await (const key of keys) {
               const fromId = key.split('.').pop()
               if (!fromId || fromId === '__index' || seen.has(fromId)) continue
@@ -77,7 +78,7 @@ export const inStep = {
             }
           }
         } else {
-          const keys = await store.keys(`node.${vertexId}.inV.*`)
+          const keys = await store.keys(graphKeyspace.vertex.inV.pattern(vertexId))
           for await (const key of keys) {
             const fromId = key.split('.').pop()
             if (!fromId || fromId === '__index' || seen.has(fromId)) continue

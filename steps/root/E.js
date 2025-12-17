@@ -1,10 +1,6 @@
 import { operationResultTypeKey, operationFactoryKey, operationResultType, operationNameKey, operationName, operationStreamWrapperKey } from '../types.js'
-
-const keyExists = async (kvStore, key) => {
-  const itr = await kvStore.keys(key)
-  const { done, value } = await itr[Symbol.asyncIterator]().next()
-  return !done && value !== undefined
-}
+import { graphKeyspace } from '../kv/graphKeyspace.js'
+import { keyExists } from '../kv/kvUtils.js'
 
 export const E = {
   [operationNameKey]: operationName.E,
@@ -16,14 +12,14 @@ export const E = {
       }
       if (Array.isArray(idOrIds)) {
         for (const edgeId of idOrIds) {
-          const exists = await keyExists(kvStore, `edges.${edgeId}`)
+          const exists = await keyExists(kvStore, graphKeyspace.edgesIndex.record(edgeId))
           if (exists) yield edgeId
         }
         return
       }
 
       if (idOrIds === undefined || idOrIds === null) {
-        const keys = await kvStore.keys('edges.*')
+        const keys = await kvStore.keys(graphKeyspace.edgesIndex.all())
         for await (const key of keys) {
           yield key.split('.').pop()
         }
@@ -31,7 +27,7 @@ export const E = {
       }
 
       if (kvStore) {
-        const exists = await keyExists(kvStore, `edges.${idOrIds}`)
+        const exists = await keyExists(kvStore, graphKeyspace.edgesIndex.record(idOrIds))
         if (exists) yield idOrIds
       }
     })()
@@ -43,14 +39,14 @@ export const E = {
     async function* iterator() {
       if (Array.isArray(idOrIds)) {
         for (const edgeId of idOrIds) {
-          const exists = await keyExists(kvStore, `edges.${edgeId}`)
+          const exists = await keyExists(kvStore, graphKeyspace.edgesIndex.record(edgeId))
           if (exists) yield edgeId
         }
         return
       }
 
       if (idOrIds === undefined || idOrIds === null) {
-        const keys = await kvStore.keys('edges.*')
+        const keys = await kvStore.keys(graphKeyspace.edgesIndex.all())
         for await (const key of keys) {
           yield key.split('.').pop()
         }
@@ -58,7 +54,7 @@ export const E = {
       }
 
       if (kvStore) {
-        const exists = await keyExists(kvStore, `edges.${idOrIds}`)
+        const exists = await keyExists(kvStore, graphKeyspace.edgesIndex.record(idOrIds))
         if (exists) yield idOrIds
       }
     }

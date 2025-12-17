@@ -1,10 +1,6 @@
 import { operationResultTypeKey, operationFactoryKey, operationResultType, operationNameKey, operationName, operationStreamWrapperKey } from '../types.js'
-
-const keyExists = async (kvStore, key) => {
-  const itr = await kvStore.keys(key)
-  const { done, value } = await itr[Symbol.asyncIterator]().next()
-  return !done && value !== undefined
-}
+import { graphKeyspace } from '../kv/graphKeyspace.js'
+import { keyExists } from '../kv/kvUtils.js'
 
 export const V = {
   [operationNameKey]: operationName.V,
@@ -17,7 +13,7 @@ export const V = {
       if (Array.isArray(idOrIds)) {
         for (const id of idOrIds) {
           if (!kvStore) continue
-          const exists = await keyExists(kvStore, `node.${id}`)
+          const exists = await keyExists(kvStore, graphKeyspace.vertex.record(id))
           if (exists) yield id
         }
         return;
@@ -25,14 +21,14 @@ export const V = {
 
       if (idOrIds === undefined || idOrIds === null) {
         if (!kvStore) return
-        for await (const key of await kvStore.keys(`node.*`)) {
+        for await (const key of await kvStore.keys(graphKeyspace.vertex.all())) {
           yield key.split('.').pop()
         }
         return;
       }
 
       if (kvStore) {
-        const exists = await keyExists(kvStore, `node.${idOrIds}`)
+        const exists = await keyExists(kvStore, graphKeyspace.vertex.record(idOrIds))
         if (exists) yield idOrIds
       }
     })()
@@ -42,7 +38,7 @@ export const V = {
       if (Array.isArray(idOrIds)) {
         for (const id of idOrIds) {
           if (!kvStore) continue
-          const exists = await keyExists(kvStore, `node.${id}`)
+          const exists = await keyExists(kvStore, graphKeyspace.vertex.record(id))
           if (exists) yield id
         }
         return;
@@ -50,7 +46,7 @@ export const V = {
 
       if (idOrIds === undefined || idOrIds === null) {
         if (!kvStore) return
-        for await (const key of await kvStore.keys(`node.*`)) {
+        for await (const key of await kvStore.keys(graphKeyspace.vertex.all())) {
           yield key.split('.').pop()
         }
         return;
@@ -58,7 +54,7 @@ export const V = {
 
       // Single id: only yield if present in storage
       if (kvStore) {
-        const exists = await keyExists(kvStore, `node.${idOrIds}`)
+        const exists = await keyExists(kvStore, graphKeyspace.vertex.record(idOrIds))
         if (exists) yield idOrIds
       }
     }

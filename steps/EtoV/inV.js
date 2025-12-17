@@ -1,5 +1,7 @@
 import { VRef } from '../root/V.js'
 import { operationFactoryKey, operationNameKey, operationName, operationResultType, operationResultTypeKey, Errors } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
+import { getStringOrNull } from '../kv/kvUtils.js'
 
 export const edgeInV = {
   [operationNameKey]: operationName.inV,
@@ -11,12 +13,7 @@ export const edgeInV = {
 
     return {
       [Symbol.asyncIterator]: (async function* () {
-        let toId = null
-        try {
-          toId = await store.get(`edge.${edgeId}.outgoing`).then((d) => d.string())
-        } catch {
-          toId = null
-        }
+        const toId = await getStringOrNull(store, graphKeyspace.edge.outgoing(edgeId))
         if (toId != null) yield toId
       })
     }

@@ -1,5 +1,6 @@
 import { vertexLabel, edgeLabel } from '../terminal/label.js'
 import { operationResultTypeKey, operationFactoryKey, operationResultType, operationNameKey, operationName, operationStreamWrapperKey, Errors } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 
 export const vertexHas = {
@@ -21,7 +22,7 @@ export const vertexHas = {
         } else if (key === 'id') {
           getValue = vertexId
         } else {
-          getValue = await kvStore.get(`node.${vertexId}.property.${key}`).then(kvValue => kvValue?.json())
+          getValue = await kvStore.get(graphKeyspace.vertex.property(vertexId, key)).then(kvValue => kvValue?.json())
         }
         if (getValue === expected) yield vertexId
       }
@@ -42,7 +43,7 @@ export const vertexHas = {
       } else if (key === 'id') {
         getValue = vertexId
       } else {
-        getValue = kvStore.get(`node.${vertexId}.property.${key}`)
+        getValue = kvStore.get(graphKeyspace.vertex.property(vertexId, key))
           .then(kvValue => kvValue?.json())
       }
       const isSame = (await getValue) === expected
@@ -76,7 +77,7 @@ export const edgeHas = {
         } else if (key === 'id') {
           getValue = edgeId
         } else {
-          getValue = await kvStore.get(`edge.${edgeId}.property.${key}`).then(kvValue => kvValue?.json())
+          getValue = await kvStore.get(graphKeyspace.edge.property(edgeId, key)).then(kvValue => kvValue?.json())
         }
         if (getValue === expected) yield edgeId
       }
@@ -97,7 +98,7 @@ export const edgeHas = {
       } else if (key === 'id') {
         getValue = edgeId
       } else {
-        getValue = kvStore.get(`edge.${edgeId}.property.${key}`)
+        getValue = kvStore.get(graphKeyspace.edge.property(edgeId, key))
           .then(kvValue => kvValue?.json())
       }
       const isSame = (await getValue) === expected

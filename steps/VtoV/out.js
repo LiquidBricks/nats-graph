@@ -1,4 +1,5 @@
 import { operationResultTypeKey, operationFactoryKey, operationResultType as sharedElementType, operationNameKey, operationName, operationStreamWrapperKey, Errors } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 const normalizeLabels = (args) => {
   if (!Array.isArray(args)) return []
@@ -22,7 +23,7 @@ export const out = {
         try {
           if (wanted.size > 0) {
             for (const label of wanted) {
-              const keys = await store.keys(`node.${vertexId}.outV.${label}.*`)
+              const keys = await store.keys(graphKeyspace.vertex.outV.patternByLabel(vertexId, label))
               for await (const key of keys) {
                 const toId = key.split('.').pop()
                 if (!toId || toId === '__index' || seen.has(toId)) continue
@@ -31,7 +32,7 @@ export const out = {
               }
             }
           } else {
-            const keys = await store.keys(`node.${vertexId}.outV.*`)
+            const keys = await store.keys(graphKeyspace.vertex.outV.pattern(vertexId))
             for await (const key of keys) {
               const toId = key.split('.').pop()
               if (!toId || toId === '__index' || seen.has(toId)) continue
@@ -58,7 +59,7 @@ export const out = {
       try {
         if (wanted.size > 0) {
           for (const label of wanted) {
-            const keys = await store.keys(`node.${vertexId}.outV.${label}.*`)
+            const keys = await store.keys(graphKeyspace.vertex.outV.patternByLabel(vertexId, label))
             for await (const key of keys) {
               const toId = key.split('.').pop()
               if (!toId || toId === '__index' || seen.has(toId)) continue
@@ -67,7 +68,7 @@ export const out = {
             }
           }
         } else {
-          const keys = await store.keys(`node.${vertexId}.outV.*`)
+          const keys = await store.keys(graphKeyspace.vertex.outV.pattern(vertexId))
           for await (const key of keys) {
             const toId = key.split('.').pop()
             if (!toId || toId === '__index' || seen.has(toId)) continue

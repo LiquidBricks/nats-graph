@@ -1,6 +1,7 @@
 import { vertexLabel, edgeLabel } from './label.js'
 import { operationFactoryKey, operationStreamWrapperKey } from '../types.js'
 import { operationResultTypeKey, operationResultType, operationNameKey, operationName } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 export const vertexValueMap = {
   [operationNameKey]: operationName.valueMap,
@@ -9,7 +10,7 @@ export const vertexValueMap = {
     return (source) => (async function* () {
       for await (const vertexId of source) {
         if (!args || args.length === 0) {
-          const keys = await kvStore.keys(`node.${vertexId}.property.*`).then(Array.fromAsync)
+          const keys = await kvStore.keys(graphKeyspace.vertex.propertiesPattern(vertexId)).then(Array.fromAsync)
           const entries = await Promise.all(
             keys.map(async (key) => {
               const name = key.split('.').pop()
@@ -38,7 +39,7 @@ export const vertexValueMap = {
             return ['id', vertexId]
           }
           try {
-            const d = await kvStore.get(`node.${vertexId}.property.${k}`)
+            const d = await kvStore.get(graphKeyspace.vertex.property(vertexId, k))
             const v = await d.json()
             return [k, v]
           } catch {
@@ -54,7 +55,7 @@ export const vertexValueMap = {
     async function* iterator() {
       // if no args, return all property keys and values
       if (!args || args.length === 0) {
-        const keys = await kvStore.keys(`node.${vertexId}.property.*`).then(Array.fromAsync)
+        const keys = await kvStore.keys(graphKeyspace.vertex.propertiesPattern(vertexId)).then(Array.fromAsync)
 
         const entries = await Promise.all(
           keys.map(async (key) => {
@@ -87,7 +88,7 @@ export const vertexValueMap = {
         }
 
         try {
-          const d = await kvStore.get(`node.${vertexId}.property.${k}`)
+          const d = await kvStore.get(graphKeyspace.vertex.property(vertexId, k))
           const v = await d.json()
           return [k, v]
         } catch {
@@ -112,7 +113,7 @@ export const edgeValueMap = {
     return (source) => (async function* () {
       for await (const edgeId of source) {
         if (!args || args.length === 0) {
-          const keys = await kvStore.keys(`edge.${edgeId}.property.*`).then(Array.fromAsync)
+          const keys = await kvStore.keys(graphKeyspace.edge.propertiesPattern(edgeId)).then(Array.fromAsync)
           const entries = await Promise.all(
             keys.map(async (key) => {
               const name = key.split('.').pop()
@@ -141,7 +142,7 @@ export const edgeValueMap = {
             return ['id', edgeId]
           }
           try {
-            const d = await kvStore.get(`edge.${edgeId}.property.${k}`)
+            const d = await kvStore.get(graphKeyspace.edge.property(edgeId, k))
             const v = await d.json()
             return [k, v]
           } catch {
@@ -156,7 +157,7 @@ export const edgeValueMap = {
   [operationFactoryKey]({ parent: edgeId, ctx: { kvStore }, args = [] } = {}) {
     async function* iterator() {
       if (!args || args.length === 0) {
-        const keys = await kvStore.keys(`edge.${edgeId}.property.*`).then(Array.fromAsync)
+        const keys = await kvStore.keys(graphKeyspace.edge.propertiesPattern(edgeId)).then(Array.fromAsync)
 
         const entries = await Promise.all(
           keys.map(async (key) => {
@@ -188,7 +189,7 @@ export const edgeValueMap = {
         }
 
         try {
-          const d = await kvStore.get(`edge.${edgeId}.property.${k}`)
+          const d = await kvStore.get(graphKeyspace.edge.property(edgeId, k))
           const v = await d.json()
           return [k, v]
         } catch {

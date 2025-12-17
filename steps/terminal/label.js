@@ -1,4 +1,5 @@
 import { operationResultTypeKey, operationFactoryKey, operationResultType, operationNameKey, operationName, operationStreamWrapperKey } from '../types.js'
+import { graphKeyspace } from '../kv/graphKeyspace.js'
 
 export const vertexLabel = {
   [operationNameKey]: operationName.label,
@@ -6,13 +7,13 @@ export const vertexLabel = {
   [operationStreamWrapperKey]({ ctx: { kvStore } } = {}) {
     return (source) => (async function* () {
       for await (const vertexId of source) {
-        yield await kvStore.get(`node.${vertexId}.label`).then((data) => data.string())
+        yield await kvStore.get(graphKeyspace.vertex.label(vertexId)).then((data) => data.string())
       }
     })()
   },
   [operationFactoryKey]({ parent: vertexId, ctx: { kvStore } } = {}) {
     async function* itr() {
-      yield await kvStore.get(`node.${vertexId}.label`).then((data) => data.string())
+      yield await kvStore.get(graphKeyspace.vertex.label(vertexId)).then((data) => data.string())
     }
 
     return {
@@ -27,13 +28,13 @@ export const edgeLabel = {
   [operationStreamWrapperKey]({ ctx: { kvStore } } = {}) {
     return (source) => (async function* () {
       for await (const edgeId of source) {
-        yield await kvStore.get(`edge.${edgeId}.label`).then((data) => data.string())
+        yield await kvStore.get(graphKeyspace.edge.label(edgeId)).then((data) => data.string())
       }
     })()
   },
   [operationFactoryKey]({ parent: edgeId, ctx: { kvStore } } = {}) {
     async function* itr() {
-      yield await kvStore.get(`edge.${edgeId}.label`).then((data) => data.string())
+      yield await kvStore.get(graphKeyspace.edge.label(edgeId)).then((data) => data.string())
     }
 
     return {
