@@ -1,13 +1,12 @@
 export async function registerMutationSteps({ bench, g }) {
-  const items = []
-  for (let i = 0; i < 2000; i++) { items.push(i) }
 
-  bench.add('addV', async () => {
-    await Promise.all(items.map(() => g.addV('bench_v')))
-  })
 
   const [v1] = await g.addV('bench_src')
   const [v2] = await g.addV('bench_dst')
+
+  bench.add('addV', async () => {
+    await g.addV('bench_v')
+  })
 
   bench.add('addE', async () => g.addE('bench_e', v1, v2))
 

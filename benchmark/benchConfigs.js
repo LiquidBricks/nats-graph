@@ -1,2 +1,2 @@
-export const STEP_BENCH_CONFIG = { time: 5, warmup: 5, iterations: 5 }
-export const PROVIDER_BENCH_CONFIG = { time: 5, warmup: 5, iterations: 100 }
+export const STEP_BENCH_CONFIG = { time: 50, warmup: false, iterations: 1, concurrency: 'bench' }
+export const PROVIDER_BENCH_CONFIG = { time: 50, warmup: false, iterations: 1, concurrency: 'bench' }

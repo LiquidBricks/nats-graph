@@ -13,7 +13,6 @@ export const addV = {
         kvStore.create(`node.${id}`, id),
         kvStore.create(`node.${id}.label`, label),
         kvStore.create(`node.${id}.label.${label}`, ""),
-        kvStore.create(`nodes.${id}`, "")
       ])
       yield id
     })()
@@ -27,7 +26,6 @@ export const addV = {
         kvStore.create(`node.${id}`, id),
         kvStore.create(`node.${id}.label`, label),
         kvStore.create(`node.${id}.label.${label}`, ""),
-        kvStore.create(`nodes.${id}`, "")// Global vertex index for fast V() iteration
       ])
       yield id
     }

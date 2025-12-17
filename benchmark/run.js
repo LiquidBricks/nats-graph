@@ -65,6 +65,13 @@ function rebuildMarksIndex() {
   }
 }
 
+function startBenchProgress(message, intervalMs = 5000) {
+  const timer = setInterval(() => {
+    console.log(`${message} still running…`)
+  }, intervalMs)
+  return () => clearInterval(timer)
+}
+
 function writeMark({ suite, provider, benchDurationMs, rows }) {
   try {
     const timestamp = new Date().toISOString()
@@ -124,10 +131,15 @@ async function main() {
   ]
   const graphCombinedRows = []
   const kvCombinedRows = []
+  const totalBenchmarks = providers.length * 2
+  let benchIndex = 0
 
   for (const { config, createProviderBench } of providers) {
     const providerLabel = config.provider
-    console.log(`\nRunning provider-only benchmarks for "${providerLabel}"`)
+    benchIndex += 1
+    const providerMsg = `[${benchIndex}/${totalBenchmarks}] Running provider-only benchmarks for "${providerLabel}"`
+    console.log(`\n${providerMsg}`)
+    const stopProviderProgress = startBenchProgress(providerMsg)
     try {
       const { rows, benchDurationMs, outFile } = await runProviderBench({ provider: providerLabel, createBenchFn: createProviderBench })
       kvCombinedRows.push(...rows.map(r => ({ provider: providerLabel, ...r })))
@@ -137,8 +149,14 @@ async function main() {
     } catch (err) {
       console.error(`Provider benchmarks failed for "${providerLabel}"`, err)
     }
+    finally {
+      stopProviderProgress()
+    }
 
-    console.log(`\nRunning graph-step benchmarks for "${providerLabel}"`)
+    benchIndex += 1
+    const graphMsg = `[${benchIndex}/${totalBenchmarks}] Running graph-step benchmarks for "${providerLabel}"`
+    console.log(`\n${graphMsg}`)
+    const stopGraphProgress = startBenchProgress(graphMsg)
     try {
       const { rows, benchDurationMs, outFile } = await runGraphBenchForProvider(config)
       graphCombinedRows.push(...rows.map(r => ({ provider: providerLabel, ...r })))
@@ -147,6 +165,9 @@ async function main() {
       if (outFile) console.log(`Saved benchmark output to ${outFile}`)
     } catch (err) {
       console.error(`Graph benchmarks failed for "${providerLabel}"`, err)
+    }
+    finally {
+      stopGraphProgress()
     }
   }
 

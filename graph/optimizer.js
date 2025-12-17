@@ -28,14 +28,14 @@ export function optimizeOpsChain(originalOperationsChain, { diagnostics }) {
 
 
   if (operationsChain.length > 2) {
-    const [, c1, c2] = operationsChain
-    if (
-      c1.operation[operationNameKey] === operationName.V &&
-      c1.args.length === 0 &&
-      c2.operation[operationNameKey] === operationName.has &&
-      c2.args[0] === 'label'
-    )
-      operationsChain.splice(1, 2, { prop: '_vHasLabel', args: [c2.args[1]], operation: _vHasLabel })
+    // const [, c1, c2] = operationsChain
+    // if (
+    //   c1.operation[operationNameKey] === operationName.V &&
+    //   c1.args.length === 0 &&
+    //   c2.operation[operationNameKey] === operationName.has &&
+    //   c2.args[0] === 'label'
+    // )
+    //   operationsChain.splice(1, 2, { prop: '_vHasLabel', args: [c2.args[1]], operation: _vHasLabel })
   }
 
   return operationsChain

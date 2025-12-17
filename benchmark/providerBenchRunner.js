@@ -11,6 +11,12 @@ export async function createProviderBench({ provider, kvConfig, benchConfig = PR
   const kv = kvStore.interface
 
   const bench = new Bench(benchConfig)
+  const capturedTasks = []
+  const originalAdd = bench.add.bind(bench)
+  bench.add = (name, fn) => {
+    capturedTasks.push({ name, fn })
+    return bench
+  }
   const prefix = `bench_${provider}_${Date.now()}_${Math.random().toString(36).slice(2)}`
   let createCounter = 0
   let putCounter = 0
@@ -56,6 +62,19 @@ export async function createProviderBench({ provider, kvConfig, benchConfig = PR
     const itr = await kv.keys(`${keysPrefix}.*`)
     const collected = []
     for await (const k of itr) collected.push(k)
+  })
+
+  bench.add = originalAdd
+  const totalTasks = capturedTasks.length
+  capturedTasks.forEach(({ name, fn }, idx) => {
+    let started = false
+    bench.add(name, async function (...args) {
+      if (!started) {
+        console.log(`[${idx + 1}/${totalTasks}] Running provider task "${name}"`)
+        started = true
+      }
+      return fn.apply(this, args)
+    })
   })
 
   return { bench, kvStore }
