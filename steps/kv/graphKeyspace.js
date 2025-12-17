@@ -11,6 +11,11 @@ export const graphKeyspace = Object.freeze({
 
     property: (id, key) => `node.${id}.property.${key}`,
     propertiesPattern: (id) => `node.${id}.property.*`,
+    propertyKeys: Object.freeze({
+      meta: (id) => `node.${id}.props.meta`,
+      chunk: (id, chunkId) => `node.${id}.props.c.${chunkId}`,
+      allForVertex: (id) => `node.${id}.props.>`,
+    }),
 
     outE: Object.freeze({
       key: (fromId, edgeId) => `node.${fromId}.outE.${edgeId}`,
@@ -61,6 +66,11 @@ export const graphKeyspace = Object.freeze({
     outgoing: (id) => `edge.${id}.outgoing`,
     property: (id, key) => `edge.${id}.property.${key}`,
     propertiesPattern: (id) => `edge.${id}.property.*`,
+    propertyKeys: Object.freeze({
+      meta: (id) => `edge.${id}.props.meta`,
+      chunk: (id, chunkId) => `edge.${id}.props.c.${chunkId}`,
+      allForEdge: (id) => `edge.${id}.props.>`,
+    }),
   }),
 
   edgesIndex: Object.freeze({

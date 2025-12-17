@@ -2,6 +2,7 @@ import { vertexLabel, edgeLabel } from './label.js'
 import { operationFactoryKey, operationStreamWrapperKey } from '../types.js'
 import { operationResultTypeKey, operationResultType, operationNameKey, operationName } from '../types.js'
 import { graphKeyspace } from '../kv/graphKeyspace.js'
+import { readChunkedSet } from '../kv/kvUtils.js'
 
 export const vertexValueMap = {
   [operationNameKey]: operationName.valueMap,
@@ -10,18 +11,27 @@ export const vertexValueMap = {
     return (source) => (async function* () {
       for await (const vertexId of source) {
         if (!args || args.length === 0) {
-          const keys = await kvStore.keys(graphKeyspace.vertex.propertiesPattern(vertexId)).then(Array.fromAsync)
+          const chunkedKeys = await readChunkedSet(kvStore, {
+            metaKey: graphKeyspace.vertex.propertyKeys.meta(vertexId),
+            chunkKeyForIndex: (idx) => graphKeyspace.vertex.propertyKeys.chunk(vertexId, idx),
+          })
+          const keys = chunkedKeys.length > 0
+            ? chunkedKeys
+            : await kvStore.keys(graphKeyspace.vertex.propertiesPattern(vertexId)).then(Array.fromAsync)
+          const seen = new Set()
           const entries = await Promise.all(
-            keys.map(async (key) => {
-              const name = key.split('.').pop()
-              try {
-                const d = await kvStore.get(key)
-                const v = await d.json()
-                return [name, v]
-              } catch {
-                return [name, undefined]
-              }
-            })
+            keys
+              .map((key) => key.split('.').pop())
+              .filter((name) => name && !seen.has(name) && seen.add(name))
+              .map(async (name) => {
+                try {
+                  const d = await kvStore.get(graphKeyspace.vertex.property(vertexId, name))
+                  const v = await d.json()
+                  return [name, v]
+                } catch {
+                  return [name, undefined]
+                }
+              })
           )
           yield Object.fromEntries(entries)
           continue
@@ -55,19 +65,28 @@ export const vertexValueMap = {
     async function* iterator() {
       // if no args, return all property keys and values
       if (!args || args.length === 0) {
-        const keys = await kvStore.keys(graphKeyspace.vertex.propertiesPattern(vertexId)).then(Array.fromAsync)
+        const chunkedKeys = await readChunkedSet(kvStore, {
+          metaKey: graphKeyspace.vertex.propertyKeys.meta(vertexId),
+          chunkKeyForIndex: (idx) => graphKeyspace.vertex.propertyKeys.chunk(vertexId, idx),
+        })
+        const keys = chunkedKeys.length > 0
+          ? chunkedKeys
+          : await kvStore.keys(graphKeyspace.vertex.propertiesPattern(vertexId)).then(Array.fromAsync)
+        const seen = new Set()
 
         const entries = await Promise.all(
-          keys.map(async (key) => {
-            const name = key.split('.').pop()
-            try {
-              const d = await kvStore.get(key)
-              const v = await d.json()
-              return [name, v]
-            } catch {
-              return [name, undefined]
-            }
-          })
+          keys
+            .map((key) => key.split('.').pop())
+            .filter((name) => name && !seen.has(name) && seen.add(name))
+            .map(async (name) => {
+              try {
+                const d = await kvStore.get(graphKeyspace.vertex.property(vertexId, name))
+                const v = await d.json()
+                return [name, v]
+              } catch {
+                return [name, undefined]
+              }
+            })
         )
 
         yield Object.fromEntries(entries)
@@ -113,18 +132,27 @@ export const edgeValueMap = {
     return (source) => (async function* () {
       for await (const edgeId of source) {
         if (!args || args.length === 0) {
-          const keys = await kvStore.keys(graphKeyspace.edge.propertiesPattern(edgeId)).then(Array.fromAsync)
+          const chunkedKeys = await readChunkedSet(kvStore, {
+            metaKey: graphKeyspace.edge.propertyKeys.meta(edgeId),
+            chunkKeyForIndex: (idx) => graphKeyspace.edge.propertyKeys.chunk(edgeId, idx),
+          })
+          const keys = chunkedKeys.length > 0
+            ? chunkedKeys
+            : await kvStore.keys(graphKeyspace.edge.propertiesPattern(edgeId)).then(Array.fromAsync)
+          const seen = new Set()
           const entries = await Promise.all(
-            keys.map(async (key) => {
-              const name = key.split('.').pop()
-              try {
-                const d = await kvStore.get(key)
-                const v = await d.json()
-                return [name, v]
-              } catch {
-                return [name, undefined]
-              }
-            })
+            keys
+              .map((key) => key.split('.').pop())
+              .filter((name) => name && !seen.has(name) && seen.add(name))
+              .map(async (name) => {
+                try {
+                  const d = await kvStore.get(graphKeyspace.edge.property(edgeId, name))
+                  const v = await d.json()
+                  return [name, v]
+                } catch {
+                  return [name, undefined]
+                }
+              })
           )
           yield Object.fromEntries(entries)
           continue
@@ -157,19 +185,28 @@ export const edgeValueMap = {
   [operationFactoryKey]({ parent: edgeId, ctx: { kvStore }, args = [] } = {}) {
     async function* iterator() {
       if (!args || args.length === 0) {
-        const keys = await kvStore.keys(graphKeyspace.edge.propertiesPattern(edgeId)).then(Array.fromAsync)
+        const chunkedKeys = await readChunkedSet(kvStore, {
+          metaKey: graphKeyspace.edge.propertyKeys.meta(edgeId),
+          chunkKeyForIndex: (idx) => graphKeyspace.edge.propertyKeys.chunk(edgeId, idx),
+        })
+        const keys = chunkedKeys.length > 0
+          ? chunkedKeys
+          : await kvStore.keys(graphKeyspace.edge.propertiesPattern(edgeId)).then(Array.fromAsync)
+        const seen = new Set()
 
         const entries = await Promise.all(
-          keys.map(async (key) => {
-            const name = key.split('.').pop()
-            try {
-              const d = await kvStore.get(key)
-              const v = await d.json()
-              return [name, v]
-            } catch {
-              return [name, undefined]
-            }
-          })
+          keys
+            .map((key) => key.split('.').pop())
+            .filter((name) => name && !seen.has(name) && seen.add(name))
+            .map(async (name) => {
+              try {
+                const d = await kvStore.get(graphKeyspace.edge.property(edgeId, name))
+                const v = await d.json()
+                return [name, v]
+              } catch {
+                return [name, undefined]
+              }
+            })
         )
 
         yield Object.fromEntries(entries)
