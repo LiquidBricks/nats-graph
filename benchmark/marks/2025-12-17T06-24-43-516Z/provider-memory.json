@@ -1,0 +1,56 @@
+{
+  "suite": "provider",
+  "provider": "memory",
+  "timestamp": "2025-12-17T06:27:45.582Z",
+  "durationSeconds": 11.249,
+  "rows": [
+    {
+      "task": "kv.keys",
+      "ops/s": 14,
+      "avg (ms)": "75.1",
+      "±%": 14,
+      "p99": "126.9",
+      "samples": 14
+    },
+    {
+      "task": "kv.create",
+      "ops/s": 337985,
+      "avg (ms)": "0.0",
+      "±%": 4,
+      "p99": "0.0",
+      "samples": 273898
+    },
+    {
+      "task": "kv.update",
+      "ops/s": 400876,
+      "avg (ms)": "0.0",
+      "±%": 2,
+      "p99": "0.0",
+      "samples": 329937
+    },
+    {
+      "task": "kv.put",
+      "ops/s": 406721,
+      "avg (ms)": "0.0",
+      "±%": 2,
+      "p99": "0.0",
+      "samples": 325221
+    },
+    {
+      "task": "kv.delete",
+      "ops/s": 449860,
+      "avg (ms)": "0.0",
+      "±%": 1,
+      "p99": "0.0",
+      "samples": 382276
+    },
+    {
+      "task": "kv.get",
+      "ops/s": 471260,
+      "avg (ms)": "0.0",
+      "±%": 1,
+      "p99": "0.0",
+      "samples": 398012
+    }
+  ]
+}

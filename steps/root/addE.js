@@ -36,9 +36,7 @@ export const addE = {
         kvStore.put(graphKeyspace.vertex.outV.keyByLabel(incoming, label, outgoing), ""),
         kvStore.put(graphKeyspace.vertex.inV.key(outgoing, incoming), ""),
         kvStore.put(graphKeyspace.vertex.inV.keyByLabel(outgoing, label, incoming), ""),
-      ])
 
-      await Promise.all([
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.outE.index(incoming), id),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.outE.indexByLabel(incoming, label), id),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.inE.index(outgoing), id),
@@ -92,9 +90,6 @@ export const addE = {
         kvStore.put(graphKeyspace.vertex.inV.key(outgoing, incoming), ""),
         kvStore.put(graphKeyspace.vertex.inV.keyByLabel(outgoing, label, incoming), ""),
 
-      ])
-
-      await Promise.all([
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.outE.index(incoming), id),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.outE.indexByLabel(incoming, label), id),
         pushUniqueToJsonArray(kvStore, graphKeyspace.vertex.inE.index(outgoing), id),
