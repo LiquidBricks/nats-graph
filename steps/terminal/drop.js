@@ -44,6 +44,18 @@ const dropEdgeById = async (kvStore, edgeId) => {
     if (label) await kvStore.delete(graphKeyspace.vertex.inE.keyByLabel(outgoing, label, edgeId)).catch(() => { })
     await removeFromJsonArray(kvStore, graphKeyspace.vertex.inE.index(outgoing), edgeId)
     if (label) await removeFromJsonArray(kvStore, graphKeyspace.vertex.inE.indexByLabel(outgoing, label), edgeId)
+    await removeFromChunkedSet(kvStore, {
+      metaKey: graphKeyspace.adj.inE.meta(outgoing),
+      chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.chunk(outgoing, idx),
+      value: edgeId,
+    })
+    if (label) {
+      await removeFromChunkedSet(kvStore, {
+        metaKey: graphKeyspace.adj.inE.labelMeta(outgoing, label),
+        chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.labelChunk(outgoing, label, idx),
+        value: edgeId,
+      })
+    }
     if (incoming) {
       await removeFromJsonArray(kvStore, graphKeyspace.vertex.inV.index(outgoing), incoming)
       if (label) await removeFromJsonArray(kvStore, graphKeyspace.vertex.inV.indexByLabel(outgoing, label), incoming)
@@ -183,6 +195,10 @@ export const dropVertex = {
         for await (const key of adjInKeys) {
           await kvStore.delete(key).catch(() => { })
         }
+        const adjInEKeys = await kvStore.keys(graphKeyspace.adj.inE.allForVertex(vertexId)).catch(() => [])
+        for await (const key of adjInEKeys) {
+          await kvStore.delete(key).catch(() => { })
+        }
       }
     })()
   },
@@ -248,6 +264,10 @@ export const dropVertex = {
       }
       const adjInKeys = await kvStore.keys(graphKeyspace.adj.inV.allForVertex(vertexId)).catch(() => [])
       for await (const key of adjInKeys) {
+        await kvStore.delete(key).catch(() => { })
+      }
+      const adjInEKeys = await kvStore.keys(graphKeyspace.adj.inE.allForVertex(vertexId)).catch(() => [])
+      for await (const key of adjInEKeys) {
         await kvStore.delete(key).catch(() => { })
       }
     }

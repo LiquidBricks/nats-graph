@@ -5,12 +5,15 @@ import path from 'node:path'
 
 const PUBLIC_DIR = path.resolve(import.meta.dirname)
 const DEFAULT_PAGE = 'chart.html'
+const REPO_ROOT = path.resolve(PUBLIC_DIR, '..')
+const BENCH_RESULTS_DIR = path.join(REPO_ROOT, 'bench-results')
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css',
   '.js': 'text/javascript',
   '.json': 'application/json',
+  '.jsonl': 'application/x-ndjson; charset=utf-8',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
@@ -19,6 +22,10 @@ const MIME_TYPES = {
 
 function resolvePath(requestedPath) {
   const normalized = path.normalize(requestedPath).replace(/^(\.\.[/\\])+/, '')
+  if (normalized === '/bench-results' || normalized.startsWith('/bench-results/')) {
+    const rel = normalized.replace(/^\/bench-results\/?/, '')
+    return path.join(BENCH_RESULTS_DIR, rel)
+  }
   const base = normalized === '/' ? `/${DEFAULT_PAGE}` : normalized
   return path.join(PUBLIC_DIR, base)
 }
@@ -32,7 +39,10 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost')
     const target = resolvePath(url.pathname)
 
-    if (!target.startsWith(PUBLIC_DIR)) {
+    const allowed =
+      target.startsWith(PUBLIC_DIR) ||
+      target.startsWith(BENCH_RESULTS_DIR)
+    if (!allowed) {
       res.writeHead(403, { 'Content-Type': 'text/plain' })
       res.end('Access denied')
       return

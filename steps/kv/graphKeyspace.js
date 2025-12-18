@@ -96,6 +96,14 @@ export const graphKeyspace = Object.freeze({
       allForVertex: (vertexId) => `adj.inV.${vertexId}.>`,
       allLabelForVertex: (vertexId, label) => `adj.inV.${vertexId}.label.${label}.>`,
     }),
+    inE: Object.freeze({
+      meta: (vertexId) => `adj.inE.${vertexId}.meta`,
+      chunk: (vertexId, chunkId) => `adj.inE.${vertexId}.c.${chunkId}`,
+      labelMeta: (vertexId, label) => `adj.inE.${vertexId}.label.${label}.meta`,
+      labelChunk: (vertexId, label, chunkId) => `adj.inE.${vertexId}.label.${label}.c.${chunkId}`,
+      allForVertex: (vertexId) => `adj.inE.${vertexId}.>`,
+      allLabelForVertex: (vertexId, label) => `adj.inE.${vertexId}.label.${label}.>`,
+    }),
     all: () => 'adj.>',
   }),
 })

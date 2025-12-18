@@ -65,6 +65,16 @@ export const addE = {
           chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.labelChunk(outgoing, label, idx),
           value: incoming,
         }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inE.meta(outgoing),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.chunk(outgoing, idx),
+          value: id,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inE.labelMeta(outgoing, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.labelChunk(outgoing, label, idx),
+          value: id,
+        }),
       ]);
 
       try { await kvStore.create(graphKeyspace.edgesIndex.record(id), "") } catch { }
@@ -137,6 +147,16 @@ export const addE = {
           metaKey: graphKeyspace.adj.inV.labelMeta(outgoing, label),
           chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.labelChunk(outgoing, label, idx),
           value: incoming,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inE.meta(outgoing),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.chunk(outgoing, idx),
+          value: id,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.inE.labelMeta(outgoing, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.labelChunk(outgoing, label, idx),
+          value: id,
         }),
       ]);
 

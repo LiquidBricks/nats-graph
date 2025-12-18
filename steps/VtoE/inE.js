@@ -1,5 +1,6 @@
 import { operationFactoryKey, operationNameKey, operationName, operationResultType, operationResultTypeKey, Errors } from '../types.js'
 import { graphKeyspace } from '../kv/graphKeyspace.js'
+import { readChunkedSet } from '../kv/kvUtils.js'
 
 const normalizeLabels = (args) => {
   if (!Array.isArray(args)) return []
@@ -10,14 +11,50 @@ const normalizeLabels = (args) => {
 
 const collectEdgeIds = async ({ store, vertexId, labels = [], dedupe }) => {
   const ids = new Set()
-  const patterns = labels.length > 0
-    ? labels.map((label) => graphKeyspace.vertex.inE.patternByLabel(vertexId, label))
-    : [graphKeyspace.vertex.inE.pattern(vertexId)]
 
-  for (const pattern of patterns) {
-    const keys = await store.keys(pattern).catch(() => [])
-    for await (const key of keys) {
-      const edgeId = key.split('.').pop()
+  if (labels.length > 0) {
+    for (const label of labels) {
+      const edges = await readChunkedSet(store, {
+        metaKey: graphKeyspace.adj.inE.labelMeta(vertexId, label),
+        chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.labelChunk(vertexId, label, idx),
+      })
+      const sources = edges.length > 0
+        ? edges
+        : await (async () => {
+          const keys = await store.keys(graphKeyspace.vertex.inE.patternByLabel(vertexId, label)).catch(() => [])
+          const acc = []
+          for await (const key of keys) {
+            const edgeId = key.split('.').pop()
+            if (edgeId && edgeId !== '__index') acc.push(edgeId)
+          }
+          return acc
+        })()
+
+      for (const edgeId of sources) {
+        if (!edgeId || edgeId === '__index') continue
+        if (dedupe?.has(edgeId)) continue
+        ids.add(edgeId)
+        dedupe?.add(edgeId)
+      }
+    }
+  } else {
+    const edges = await readChunkedSet(store, {
+      metaKey: graphKeyspace.adj.inE.meta(vertexId),
+      chunkKeyForIndex: (idx) => graphKeyspace.adj.inE.chunk(vertexId, idx),
+    })
+    const sources = edges.length > 0
+      ? edges
+      : await (async () => {
+        const keys = await store.keys(graphKeyspace.vertex.inE.pattern(vertexId)).catch(() => [])
+        const acc = []
+        for await (const key of keys) {
+          const edgeId = key.split('.').pop()
+          if (edgeId && edgeId !== '__index') acc.push(edgeId)
+        }
+        return acc
+      })()
+
+    for (const edgeId of sources) {
       if (!edgeId || edgeId === '__index') continue
       if (dedupe?.has(edgeId)) continue
       ids.add(edgeId)
