@@ -56,6 +56,16 @@ export const addE = {
           value: outgoing,
         }),
         appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outE.meta(incoming),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.chunk(incoming, idx),
+          value: id,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outE.labelMeta(incoming, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.labelChunk(incoming, label, idx),
+          value: id,
+        }),
+        appendToChunkedSet(kvStore, {
           metaKey: graphKeyspace.adj.inV.meta(outgoing),
           chunkKeyForIndex: (idx) => graphKeyspace.adj.inV.chunk(outgoing, idx),
           value: incoming,
@@ -137,6 +147,16 @@ export const addE = {
           metaKey: graphKeyspace.adj.outV.labelMeta(incoming, label),
           chunkKeyForIndex: (idx) => graphKeyspace.adj.outV.labelChunk(incoming, label, idx),
           value: outgoing,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outE.meta(incoming),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.chunk(incoming, idx),
+          value: id,
+        }),
+        appendToChunkedSet(kvStore, {
+          metaKey: graphKeyspace.adj.outE.labelMeta(incoming, label),
+          chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.labelChunk(incoming, label, idx),
+          value: id,
         }),
         appendToChunkedSet(kvStore, {
           metaKey: graphKeyspace.adj.inV.meta(outgoing),
