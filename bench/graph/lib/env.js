@@ -2,9 +2,13 @@ import os from 'node:os'
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 import { natsProviderConfig } from '../../providers/nats.js'
+import { redisProviderConfig } from '../../providers/redis.js'
+import { memoryProviderConfig } from '../../providers/memory.js'
 
 const providerLoaders = {
   nats: natsProviderConfig,
+  redis: redisProviderConfig,
+  memory: memoryProviderConfig,
 }
 
 export function resolveProviderConfig(provider) {

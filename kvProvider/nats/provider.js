@@ -1,4 +1,4 @@
-import { createNatsContext } from "@liquid-bricks/shared-providers/nats-context";
+import createNatsContext from "@liquid-bricks/lib-nats-context";
 
 // Centralized error codes for this provider
 export const KVProviderErrors = {

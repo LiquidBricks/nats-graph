@@ -8,7 +8,7 @@ import { runUpdateSuite } from './update.shared.mjs'
 import { runDeleteSuite } from './delete.shared.mjs'
 import { runCreateSuite } from './create.shared.mjs'
 import { runKeysSharedSuite } from './keys.shared.mjs'
-import { diagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics } from '@liquid-bricks/lib-diagnostics'
 
 const setup = async () => kvProvider({ config: { bucket: `testing-${ulid()}` }, ctx: { diagnostics: diagnostics() } })
 

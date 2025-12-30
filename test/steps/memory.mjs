@@ -1,6 +1,6 @@
 import { makeSetup } from '../helpers/providers.mjs'
 import { kvProvider as memoryProvider } from '../../kvProvider/memory/provider.js'
-import { diagnostics as createDiagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics as createDiagnostics } from '@liquid-bricks/lib-diagnostics'
 
 import { runAddESuite } from './addE.shared.mjs'
 import { runAddVSuite } from './addV.shared.mjs'

@@ -4,7 +4,7 @@
 //   npm i -D tinybench
 //   node bench/run.js
 //
-// Runs the suite against both kv providers (NATS + in-memory).
+// Runs the suite against the available kv providers (NATS, Redis, in-memory).
 
 import { Graph } from '../graph/graph.js'
 import fs from 'node:fs'
@@ -12,8 +12,10 @@ import path from 'node:path'
 import { createBench } from './steps/index.js'
 import { natsProviderConfig } from './providers/nats.js'
 import { memoryProviderConfig } from './providers/memory.js'
+import { redisProviderConfig } from './providers/redis.js'
 import { createNatsProviderBench } from './providerBenches/nats.js'
 import { createMemoryProviderBench } from './providerBenches/memory.js'
+import { createRedisProviderBench } from './providerBenches/redis.js'
 
 function formatRows(bench) {
   const rows = bench.tasks.map(({ name, result: r }) => ({
@@ -127,6 +129,7 @@ async function runProviderBench({ provider, createBenchFn }) {
 async function main() {
   const providers = [
     { config: natsProviderConfig(), createProviderBench: createNatsProviderBench },
+    { config: redisProviderConfig(), createProviderBench: createRedisProviderBench },
     { config: memoryProviderConfig(), createProviderBench: createMemoryProviderBench },
   ]
   const graphCombinedRows = []

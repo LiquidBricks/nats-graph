@@ -1,5 +1,5 @@
 import { Graph } from '../../graph/graph.js'
-import { diagnostics as createDiagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics as createDiagnostics } from '@liquid-bricks/lib-diagnostics'
 import { ulid } from 'ulid'
 import { NATS_IP_ADDRESS } from '../util/config.js'
 

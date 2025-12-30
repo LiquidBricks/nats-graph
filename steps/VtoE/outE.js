@@ -11,54 +11,41 @@ const normalizeLabels = (args) => {
 
 const collectEdgeIds = async ({ store, vertexId, labels = [], dedupe }) => {
   const ids = new Set()
-  if (labels.length > 0) {
-    for (const label of labels) {
-      const edges = await readChunkedSet(store, {
-        metaKey: graphKeyspace.adj.outE.labelMeta(vertexId, label),
-        chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.labelChunk(vertexId, label, idx),
-      })
-      const sources = edges.length > 0
-        ? edges
-        : await (async () => {
-          const keys = await store.keys(graphKeyspace.vertex.outE.patternByLabel(vertexId, label)).catch(() => [])
-          const acc = []
-          for await (const key of keys) {
-            const edgeId = key.split('.').pop()
-            if (edgeId && edgeId !== '__index') acc.push(edgeId)
-          }
-          return acc
-        })()
 
-      for (const edgeId of sources) {
-        if (!edgeId || edgeId === '__index') continue
-        if (dedupe?.has(edgeId)) continue
-        ids.add(edgeId)
-        dedupe?.add(edgeId)
+  const collectFromSources = async ({ metaKey, chunkKeyForIndex, pattern }) => {
+    const chunked = await readChunkedSet(store, { metaKey, chunkKeyForIndex })
+    const fromKeys = await (async () => {
+      const keys = await store.keys(pattern).catch(() => [])
+      const acc = []
+      for await (const key of keys) {
+        const edgeId = key.split('.').pop()
+        if (edgeId && edgeId !== '__index') acc.push(edgeId)
       }
-    }
-  } else {
-    const edges = await readChunkedSet(store, {
-      metaKey: graphKeyspace.adj.outE.meta(vertexId),
-      chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.chunk(vertexId, idx),
-    })
-    const sources = edges.length > 0
-      ? edges
-      : await (async () => {
-        const keys = await store.keys(graphKeyspace.vertex.outE.pattern(vertexId)).catch(() => [])
-        const acc = []
-        for await (const key of keys) {
-          const edgeId = key.split('.').pop()
-          if (edgeId && edgeId !== '__index') acc.push(edgeId)
-        }
-        return acc
-      })()
+      return acc
+    })()
 
-    for (const edgeId of sources) {
+    for (const edgeId of new Set([...chunked, ...fromKeys])) {
       if (!edgeId || edgeId === '__index') continue
       if (dedupe?.has(edgeId)) continue
       ids.add(edgeId)
       dedupe?.add(edgeId)
     }
+  }
+
+  if (labels.length > 0) {
+    for (const label of labels) {
+      await collectFromSources({
+        metaKey: graphKeyspace.adj.outE.labelMeta(vertexId, label),
+        chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.labelChunk(vertexId, label, idx),
+        pattern: graphKeyspace.vertex.outE.patternByLabel(vertexId, label),
+      })
+    }
+  } else {
+    await collectFromSources({
+      metaKey: graphKeyspace.adj.outE.meta(vertexId),
+      chunkKeyForIndex: (idx) => graphKeyspace.adj.outE.chunk(vertexId, idx),
+      pattern: graphKeyspace.vertex.outE.pattern(vertexId),
+    })
   }
 
   return ids

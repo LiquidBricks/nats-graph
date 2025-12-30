@@ -8,7 +8,7 @@ import { buildUniformTopology } from './topologies/uniform.js'
 import { buildHubTopology } from './topologies/hub.js'
 import { buildChainTopology } from './topologies/chain.js'
 import { kvProviderFactory } from '../../../kvProvider/factory.js'
-import { diagnostics as createDiagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics as createDiagnostics } from '@liquid-bricks/lib-diagnostics'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sizesPath = path.join(__dirname, '..', 'config', 'sizes.json')

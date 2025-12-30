@@ -1,6 +1,6 @@
 import { Errors } from '../steps/types.js'
 import { kvProviderFactory } from '../kvProvider/factory.js'
-import { diagnostics as createDiagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics as createDiagnostics } from '@liquid-bricks/lib-diagnostics'
 import buildMeta from '../build-meta.js'
 import { operationChainExecutor } from './operationChain.js'
 

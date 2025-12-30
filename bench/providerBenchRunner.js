@@ -1,6 +1,6 @@
 import { Bench } from 'tinybench'
 import { kvProviderFactory } from '../kvProvider/factory.js'
-import { diagnostics as createDiagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics as createDiagnostics } from '@liquid-bricks/lib-diagnostics'
 import { PROVIDER_BENCH_CONFIG } from './benchConfigs.js'
 
 // Provider-level benchmarks for raw KV interface functions.

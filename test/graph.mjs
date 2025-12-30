@@ -3,7 +3,7 @@ import test, { after, suite } from 'node:test'
 import { Graph } from '../graph/graph.js'
 import { NATS_IP_ADDRESS } from './util/config.js'
 import { ulid } from 'ulid'
-import { diagnostics as createDiagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics as createDiagnostics } from '@liquid-bricks/lib-diagnostics'
 import { Errors } from '../steps/types.js'
 import buildMeta from '../build-meta.js'
 

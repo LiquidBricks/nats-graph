@@ -17,10 +17,12 @@
     "prepublishOnly": "node scripts/embed-build-meta.js"
   },
   "dependencies": {
-    "@liquid-bricks/shared-providers": "github:LiquidBricks/shared-providers#2cb64ee848df4fe2734cb59f86d511aa0cad313b",
+    "@liquid-bricks/lib-nats-context": "github:LiquidBricks/lib-nats-context#6b5b9da0b56e094055e548639ab3b3928596cc18",
+    "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#cef4c2fe2e2793d49b7e189ce7e25c41c8e6090a",
     "@nats-io/jetstream": "^3.0.2",
     "@nats-io/kv": "^3.0.2",
     "@nats-io/transport-node": "^3.0.2",
+    "redis": "^4.7.1",
     "ulid": "^3.0.0"
   },
   "files": [

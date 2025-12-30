@@ -1,5 +1,5 @@
 import { graph as natsGraph } from '../../../graph/graph.js'
-import { createNatsContext } from '@liquid-bricks/shared-providers/nats-context';
+import createNatsContext from '@liquid-bricks/lib-nats-context';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

@@ -1,6 +1,6 @@
 import { makeSetup } from '../helpers/providers.mjs'
 import { kvProvider as natsProvider } from '../../kvProvider/nats/provider.js'
-import { diagnostics as createDiagnostics } from '@liquid-bricks/shared-providers/diagnostics'
+import { diagnostics as createDiagnostics } from '@liquid-bricks/lib-diagnostics'
 import { NATS_IP_ADDRESS } from '../util/config.js'
 import { ulid } from 'ulid'
 import assert from 'node:assert/strict'

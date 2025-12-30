@@ -1,6 +1,6 @@
 # Graph Benchmarks (micro + workloads + scale)
 
-This harness wraps the NATS-backed graph provider with three suites:
+This harness wraps the graph providers (NATS, Redis, or in-memory) with three suites:
 
 - **micro**: step-level latency (reads, expands, filters, writes) using the smallest dataset (S1/uniform).
 - **workload**: 10 traversal shapes that mirror common Gremlin usage on a mid-size dataset (S2/uniform by default).
@@ -10,6 +10,7 @@ This harness wraps the NATS-backed graph provider with three suites:
 
 ```bash
 node bench/graph/run.js --suite micro --provider nats
+node bench/graph/run.js --suite micro --provider redis
 node bench/graph/run.js --suite workload --provider nats
 node bench/graph/run.js --suite scale --provider nats --topology hub --size S1,S2 --seed 1
 ```
@@ -17,7 +18,7 @@ node bench/graph/run.js --suite scale --provider nats --topology hub --size S1,S
 Flags:
 
 - `--suite micro|workload|scale|all`
-- `--provider nats`
+- `--provider nats|redis|memory`
 - `--topology uniform|hub|chain|all` (scale uses all by default; workload uses the first value if provided)
 - `--size S1|S2|S3|S4|all`
 - `--seed 123` (deterministic datasets + sampling)
@@ -27,6 +28,8 @@ Flags:
 - `--timeoutMs 30000`
 - `--regen` to force dataset regeneration
 - `--out ./bench-results`
+
+Redis benchmarks read `REDIS_BENCH_URL`, `REDIS_BENCH_PREFIX`, and `REDIS_BENCH_DATABASE` (defaults: `redis://127.0.0.1:6379`, prefix `nats-graph-benchmark`).
 
 Outputs are written under `bench-results/<timestamp>/`:
 
